@@ -1,192 +1,23 @@
 
-from typing import List, Tuple
-import math
+from typing import Tuple
 import numpy as np
 import numpy.typing as npt
 import scipy
 
-from linear_systems import direct_solvers
-
-def addition(A: List[List[float]],
-    B: List[List[float]], v: float = 1.0) -> List[List[float]]:
-    """Returns the resulting matrix, C(n x m) from the
-    generalized addition of two matrices,
-    A(n x m), B(n x m): C = A + v*B"""
-
-    n, m = len(A), len(A[0])
-
-    C = [ [0.0 for _ in range(m)] for _ in range(n) ]
-    for i in range(n):
-        for j in range(m):
-            C[i][j] = A[i][j] + v*B[i][j]
-
-    return C
-
-def scalar_multiplication(A: List[List[float]],
-    v: float) -> List[List[float]]:
-    """Returns the resulting matrix, B(n x m), from the
-    multiplication of a matrix A(n x m) with a scalar, v: B = v*A"""
-
-    n, m = len(A), len(A[0])
-
-    B = [ [0.0 for _ in range(m)] for _ in range(n) ]
-    for i in range(n):
-        for j in range(m):
-            B[i][j] = v*A[i][j]
-
-    return B
-
-def element_multiplication(A: List[List[float]],
-    B: List[List[float]]) -> List[List[float]]:
-    """Returns the resulting matrix, C(n x m), from the element-wise
-    multiplication of two matrices A(n x m), B(n x m): C = A*B"""
-
-    n, m = len(A), len(A[0])
-
-    C = [ [0.0 for _ in range(m)] for _ in range(n) ]
-    for i in range(n):
-        for j in range(m):
-            C[i][j] = A[i][j]*B[i][j]
-
-    return C
-
-def multiplication(A: List[List[float]],
-    B: List[List[float]]) -> List[List[float]]:
-    """Returns the resulting matrix, C(n x l), from the
-    multiplication of two matrices A(n x m), B(m x l): C = A@B"""
-
-    n, m, l = len(A), len(A[0]), len(B[0])
-
-    C = [ [0.0 for _ in range(l)] for _ in range(n) ]
-    for i in range(n):
-        for j in range(l):
-            s = 0
-            for k in range(m):
-                s += A[i][k]*B[k][j]
-            C[i][j] = s
-
-    return C
-
-def matrix_vector_multiplication(A: List[List[float]],
-    x: List[float]) -> List[float]:
-    """Multiplies an (m x n) matrix, A, by an (n) vector, x."""
-
-    m = len(A)
-    n = len(A[0])
-    result = [0.0]*m
-    for i in range(m):
-        for j in range(n):
-            result[i] += A[i][j]*x[j]
-
-    return result
-
-def transpose(A: List[List[float]]) -> List[List[float]]:
-    """Returns the transpose of a matrix A(n x m): At(m x n)"""
-
-    n, m = len(A), len(A[0])
-
-    At = [ [0.0 for _ in range(n)] for _ in range(m) ]
-    for i in range(n):
-        for j in range(m):
-            At[j][i] = A[i][j]
-
-    return At
-
-def trace(A: List[List[float]]) -> float:
-    """Returns the trace of a matrix A(n x n): tr(A)"""
-
-    trA = 0.0
-    for i in range(len(A)):
-        trA += A[i][i]
-
-    return trA
-
-def minor_matrix(A: List[List[float]], i_ex: int, j_ex: int) -> List[List[float]]:
+def minor_matrix_numpy(A: npt.NDArray[np.float64],
+    i: int, j: int) -> npt.NDArray[np.float64]:
     """Returns the minors of matrix A by excluding row i_ex and columns j_ex"""
+    A_mod = np.delete(A, i, axis=0)
+    return np.delete(A_mod, j, axis=1)
 
-    minor = A[:i_ex] + A[i_ex+1:]
-    for i in range(len(minor)):
-        minor[i] = minor[i][:j_ex] + minor[i][j_ex+1:]
-
-    return minor
-
-def determinant2D(A: List[List[float]]) -> float:
-    """Returns the determinant of a matrix A(2 x 2): det(A)"""
-
-    n, m = len(A), len(A[0])
-    if n != 2 or m != 2:
-        raise ValueError('Dimensions must be 2x2 for determinant 2D')
-
-    return A[0][0]*A[1][1] - A[0][1]*A[1][0]
-
-def determinant3D(A: List[List[float]]) -> float:
-    """Returns the determinant of a matrix A(3 x 3): det(A)"""
-
-    n, m = len(A), len(A[0])
-    if n != 3 or m != 3:
-        raise ValueError('Dimensions must be 3x3 for determinant 3D')
-
-    a, b, c = A[0][0], A[0][1], A[0][2]
-
-    minor_a = minor_matrix(A, 0, 0)
-    minor_b = minor_matrix(A, 0, 1)
-    minor_c = minor_matrix(A, 0, 2)
-
-    detA = ( a*determinant2D(minor_a) - b*determinant2D(minor_b)
-            + c*determinant2D(minor_c) )
-
-    return detA
-
-def inverse2D(A: List[List[float]]) -> List[List[float]]:
-    """Returns the inverse of a matrix A(2 x 2): A^-1"""
-
-    detA = determinant2D(A)
-    if detA == 0:
-        raise ValueError("2x2 matrix is singular! Cannot be inverted.")
-
-    n, m = len(A), len(A[0])
-    if n != 2 or m != 2:
-        raise ValueError('Dimensions must be 2x2 for inverse 2D')
-
-    invA = [
-        [ A[1][1], -A[0][1] ],
-        [ -A[1][0], A[0][0]]
-    ]
-
-    return scalar_multiplication(invA, 1.0/detA)
-
-def inverse3D(A: List[List[float]]) -> List[List[float]]:
-    """Returns the inverse of a matrix A(3 x 3): A^-1"""
-
-    n, m = len(A), len(A[0])
-    if n != 3 or m != 3:
-        raise ValueError('Dimensions must be 3x3 for inverse 3D')
-
-    detA = determinant3D(A)
-    if detA == 0:
-        raise ValueError("3x3 matrix is singular! Cannot be inverted.")
-
-    cofactors = []
-    for i in range(n):
-        row = []
-        for j in range(m):
-            minor = minor_matrix(A, i, j)
-            sign = (-1)**(i + j)
-            row.append(sign*determinant2D(minor))
-        cofactors.append(row)
-
-    adjA = transpose(cofactors)
-
-    return scalar_multiplication(adjA, 1.0/detA)
-
-def inverse(A: List[List[float]]) -> List[List[float]]:
+def inverse(A: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
     """Returns the inverse of a matrix A using LU decomposition."""
 
     n = len(A)
 
     A_lu, rows_order = lu_decomposition(A)
 
-    Ai = [ [0.0 for _ in range(n)] for _ in range(n) ]
+    Ai = np.zeros((n,n))
     for j in range(n):
 
         bi = [0.0]*n
@@ -194,57 +25,58 @@ def inverse(A: List[List[float]]) -> List[List[float]]:
 
         bi_lu = [ bi[rows_order[k]] for k in range(n) ]
 
-        d = direct_solvers.forward_substitution(A_lu, bi_lu)
+        d = forward_substitution(A_lu, bi_lu)
 
-        x = direct_solvers.back_substitution(A_lu, d)
-
-        for i in range(n):
-            Ai[i][j] = x[i]
+        Ai[:,j] = back_substitution(A_lu, d)
 
     return Ai
 
-def euclidean_norm(A: List[List[float]]) -> float:
+def euclidean_norm(A: npt.NDArray[np.float64]) -> float:
     """Returns the Euclidean (Frobenius) norm of a matrix A."""
 
-    n, m = len(A), len(A[0])
-    normA = 0.0
-    for i in range(n):
-        for j in range(m):
-            normA += A[i][j]**2
-    return math.sqrt(normA)
+    return np.linalg.norm(A, ord='fro')
+    # return np.sqrt(np.sum(A**2))
 
-def row_sum_norm(A: List[List[float]]) -> float:
+def row_sum_norm(A: npt.NDArray[np.float64]) -> float:
     """Returns the row-sum (infinity) norm of a matrix A."""
 
-    n, m = len(A), len(A[0])
-    normA = 0.0
+    # normA = np.linalg.norm(A, ord=np.inf)
+    # normA = np.sum(np.abs(A), axis=1).max()
+
+    n = A.shape[0]
+    normA = 0
     for i in range(n):
-        s_row = 0.0
-        for j in range(m):
-            s_row += abs(A[i][j])
-        normA = max(normA, s_row)
+        s_row = np.sum(np.abs(A[i,:]))
+        normA = np.maximum(normA, s_row)
     return normA
 
-def column_sum_norm(A: List[List[float]]) -> float:
+def column_sum_norm(A: npt.NDArray[np.float64]) -> float:
     """Returns the column-sum 1-norm of a matrix A."""
 
-    n, m = len(A), len(A[0])
-    normA = 0.0
+    # normA = np.sum(np.abs(A), axis=0).max()
+
+    m = A.shape[1]
+    normA = 0
     for j in range(m):
-        s_col = 0.0
-        for i in range(n):
-            s_col += abs(A[i][j])
-        normA = max(normA, s_col)
+        s_col = np.sum(np.abs(A[:,j]))
+        normA = np.maximum(normA, s_col)
     return normA
 
-def condition_number(A: List[List[float]]) -> float:
+def condition_number(A: npt.NDArray[np.float64]) -> float:
     """Returns the condition number of a matrix A."""
 
-    normA = row_sum_norm(A)
-    Ai = inverse(A)
-    normAi = row_sum_norm(Ai)
+    # cond = np.linalg.cond(A, p=np.inf) # norm_oo: row-sum norm
 
-    return normA*normAi
+    # cond = np.linalg.cond(A, p=2) # norm-2 from SVD
+    # s = np.linalg.svd(A, compute_uv=False)
+    # # Condition number is the ratio of max to min
+    # cond = s[0]/s[-1]
+
+    normA = row_sum_norm(A)
+    normAi = row_sum_norm(inverse(A))
+    cond = normA*normAi
+
+    return cond
 
 def replace_column(A: npt.NDArray[np.float64],
     b: npt.NDArray[np.float64], j: int) -> npt.NDArray[np.float64]:
@@ -285,6 +117,31 @@ def partial_pivot(A: npt.NDArray[np.float64], k: int) -> int:
 
     return i_max
 
+def forward_substitution(A: npt.NDArray[np.float64],
+    b: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+    """Returns the intermediate vector, d, from Ld = b.
+    L is the lower diagonal part of matrix A and b is the right-hand side vector."""
+
+    n = A.shape[0]
+    d = np.zeros(n)
+    for i in range(n):
+        s = np.dot(A[i,:i],d[:i])
+        d[i] = b[i]-s
+    return d
+
+def back_substitution(A: npt.NDArray[np.float64],
+    b: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+    """Returns the solution vector, x, of a linear system Ux = b.
+    U is the upper diagonal part of matrix A and b is the right-hand side vector."""
+
+    n = A.shape[0]
+    x = np.zeros(n)
+    for i in range(n-1,-1,-1):
+        s = np.dot(A[i, i+1:], x[i+1:])
+        x[i] = (b[i]-s)/A[i,i]
+
+    return x
+
 def lu_decomposition(A: npt.NDArray[np.float64]
     ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     """Returns a new matrix that is the LU decomposition of a matrix, A.
@@ -303,7 +160,7 @@ def lu_decomposition(A: npt.NDArray[np.float64]
             rows_order[[k, i_max]] = rows_order[[i_max, k]]
 
         for i in range(k+1,n):
-            f = A_lu[i][k]/A_lu[k][k]
+            f = A_lu[i,k]/A_lu[k,k]
             A_lu[i,k] = f
             A_lu[i,k+1:] -= f*A_lu[k,k+1:]
 
@@ -339,23 +196,21 @@ def tri_diagonal(A: npt.NDArray[np.float64]) -> Tuple[npt.NDArray[np.float64]]:
 
     return l, d, u
 
-def qr_decomposition(A: List[List[float]]
-    ) -> Tuple[List[List[float]], List[List[float]]]:
+def qr_decomposition(A: npt.NDArray[np.float64]
+    ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     """Returns the QR decomposition of a matrix A using Gram-Schmidt process.
     Q is the orthogonal rotation matrix and R is the upper-triangular."""
 
-    n = len(A)
-    Q = [ [0.0]*n for _ in range(n) ]
-    R = [ [0.0]*n for _ in range(n) ]
+    n = A.shape[1]
+    Q = np.zeros_like(A)
+    R = np.zeros((n, n))
 
     for j in range(n):
-        v = [A[i][j] for i in range(n)]
+        v = A[:,j]
         for i in range(j):
-            R[i][j] = sum(Q[k][i]*A[k][j] for k in range(n))
-            for k in range(n):
-                v[k] -= R[i][j]*Q[k][i]
+            R[i][j] = np.dot(Q[:,i], A[:,j])
+            v = v - R[i,j]*Q[:,i]
 
-        R[j][j] = math.sqrt(sum(x**2 for x in v))
-        for i in range(n):
-            Q[i][j] = v[i]/R[j][j]
+        R[j][j] = np.linalg.norm(v)
+        Q[:,j] = v/R[j,j]
     return Q, R

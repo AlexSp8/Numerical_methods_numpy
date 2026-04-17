@@ -1,0 +1,66 @@
+
+from typing import Callable
+from abc import ABC, abstractmethod
+import numpy as np
+import numpy.typing as npt
+
+class NonlinearProblem(ABC):
+
+    def __init__(self, f: Callable[[npt.NDArray[np.float64]], npt.NDArray[np.float64]]):
+        self.f = f
+
+    @abstractmethod
+    def f_res(self, x: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+        pass
+
+
+class Regular(NonlinearProblem):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def f_res(self, u: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+        return self.f(u)
+
+
+class Optimization(NonlinearProblem):
+
+    def __init__(self, *args,
+        df: Callable[[Callable[[float], float], float, float, float], float],
+        grad_f: Callable[[Callable[[Callable[[float], float], float, float, float], float],
+        Callable[[npt.NDArray[np.float64]], float], npt.NDArray[np.float64],
+        float], npt.NDArray[np.float64]],
+        hessian_f: Callable[[Callable[[Callable[[float], float], float, float, float], float],
+        Callable[[npt.NDArray[np.float64]], float], npt.NDArray[np.float64],
+        float], npt.NDArray[np.float64]], **kwargs):
+
+        super().__init__(*args, **kwargs)
+        self.df = df
+        self.grad_f = grad_f
+        self.hessian_f = hessian_f
+
+    def f_res(self, x: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+        return self.grad_f(self.df, self.f, x)
+
+    def jac(self, x: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+        return self.hessian_f(self.df, self.f, x)
+
+
+class Regression(NonlinearProblem):
+
+    def __init__(self, x_data, y_data):
+        self.x = x_data
+        self.y = y_data
+
+    def f_res(self, beta):
+        return beta[0]*np.exp(beta[1]*self.x) - self.y
+
+
+class PDESystem(NonlinearProblem):
+
+    def __init__(self, h, conductivity):
+        self.h = h
+        self.k = conductivity
+
+    def f_res(self, u):
+        return (u**2)/self.h + self.k
