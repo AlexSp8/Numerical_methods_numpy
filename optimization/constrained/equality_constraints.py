@@ -1,94 +1,109 @@
 
-from typing import Callable, List, Tuple
+from typing import Callable, Tuple
+import numpy as np
+import numpy.typing as npt
 
-from differentiation import forward_fd as ffd
-from utilities import vector_operations
-from linear_systems import direct_solvers
-from non_linear_systems import iterative_solvers
+from differentiation import forward_fd as ffd, partial_derivatives
+from differentiation import backward_fd as bfd
+from differentiation import central_fd as cfd
+from linear_systems import direct_solver
+from non_linear_systems import newton_solver, non_linear_problem
+from optimization.unconstrained import gradient_methods
 
-def lagrange_multipliers(f: Callable[[List[float]], float],
-    g: Callable[[List[float]], List[float]], x0: List[float] = None, l0: List[float] = None,
-    mode: str = 'min', eps: float = 1e-8, k_max = 1000) -> Tuple[List[float], float]:
+def lagrange_multipliers(f: Callable[[npt.NDArray[np.float64]], float],
+    g: Callable[[npt.NDArray[np.float64]], npt.NDArray[np.float64]],
+    x0: npt.NDArray[np.float64], l0: npt.NDArray[np.float64] = None,
+    fd_type: str = 'ffd', output: bool = False
+    ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     """Returns the optimum point, x, of a multi-variable function, f,
     under equality constraints, g, using the Lagrange multipliers method.
-    A starting guess point, x0, and Lagrange multipliers, l0, should be given."""
+    Starting point, x0, and (optionally) Lagrange multipliers, l0, should be given."""
 
-    x = [xi for xi in x0] if x0 else [0.0]*len(x0)
-    l = [li for li in l0] if l0 else [0.0]*len(l0)
+    ls_solver = direct_solver.LUSolver()
 
-    nx = len(x)
-    nl = len(l)
+    m = len(g(x0))
+
+    if l0 is None:
+        l = np.zeros(m)
+    else:
+        l = l0
+
+    u0 = np.concatenate([x0, l])
+
+    nr_solver = newton_solver.NewtonSolver(ls_solver=ls_solver, u0=u0, k_max=100, tol=1e-8, r=1.0)
+
+    if fd_type == 'ffd':
+        df = ffd.df_h
+    elif fd_type == 'bfd':
+        df = bfd.df_h
+    else:
+        df = cfd.df_h
+
+    nu = x0.shape[0]
+    problem = non_linear_problem.LagrangeMultiplier(
+        f=f, nu=nu, g=g, df=df, grad_f=partial_derivatives.grad_f_fd)
+
+    u = nr_solver.solve(problem, output=output)
+
+    x = u[:nu]
+    l = u[nu:]
+
+    return x, l
+
+def augmented_lagrangian(f: Callable[[npt.NDArray[np.float64]], float],
+    g_con: Callable[[npt.NDArray[np.float64]], npt.NDArray[np.float64]],
+    x0: npt.NDArray[np.float64], mode: str = 'min', output: bool = False,
+    l0: npt.NDArray[np.float64] = None, tol: float = 1e-8, k_max: int = 100):
+    """Returns the optimum point, x, of a multi-variable function, f,
+    under equality constraints, g, using the Augmented Lagrangian method.
+    Starting point, x0, and (optionally) Lagrange multipliers, l0, should be given."""
+
+    x = x0.copy()
+
+    g = g_con(x0)
+    m = len(g)
+
+    if l0 is None:
+        l = np.zeros(m)
+    else:
+        l = l0
+
+    p = 20.0
+
+    if mode == 'min':
+        s = +1.0
+    else:
+        s = -1.0
 
     for k in range(1, k_max+1):
 
-        res = residual(f,g,x,l)
-        res_norm = vector_operations.norm2(res)
+        def current_lagrangian(x_c: npt.NDArray[np.float64]) -> float:
+            v = g_con(x_c)
+            return f(x_c) + s*np.dot(l,v) + s*p*np.sum(v**2)
 
-        jac = jacobian(residual, f, g, x, l, res)
+        x = gradient_methods.bfgs(f=current_lagrangian, x0=x, fd_type='ffd', mode=mode)
 
-        b = [-r for r in res]
+        g = g_con(x)
+        norm_g = np.linalg.norm(g)
 
-        dx = direct_solvers.lu_decomposition_solve(jac,b)
+        l_old = l
+        l = l + p*g
 
-        cor_norm = vector_operations.norm2(dx)
+        cor_norm = np.linalg.norm(l-l_old)
 
-        print(f'k = {k}, Res Norm: {res_norm:.4e}, Cor Norm: {cor_norm:.4e}')
-        if cor_norm < eps and res_norm < eps:
+        if output:
+            print(f'k = {k}, Norm g: {norm_g:.4e}, Cor Norm: {cor_norm:.4e}')
+
+        converged = norm_g < tol or cor_norm < tol
+        if converged:
+            print(f'k = {k}, Norm g: {norm_g:.4e}, Cor Norm: {cor_norm:.4e}')
             break
 
-        for i in range(nx):
-            x[i] += dx[i]
-        for i in range(nl):
-            l[i] += dx[nx+i]
+        if p < 1e3:
+            mult = 1.2
+        else:
+            mult = 1.02
+        p *= mult
+        p = min(p, 1e8)
 
-    return x, l, f(x)
-
-def residual(f: Callable[[List[float]], float],
-    g: Callable[[List[float]], List[float]], x: List[float] = None,
-    l: List[float] = None) -> List[float]:
-    """Returns the residual of the unconstrained optimization problem."""
-
-    nx = len(x)
-    nl = len(l)
-
-    dfdx = ffd.grad_f_fd(f,x)
-    dLdx = [dfdx[i] for i in range(nx)]
-
-    dgdx = iterative_solvers.jacobian(g, x, g(x), h=1e-4)
-
-    for j in range(nl):
-        for i in range(nx):
-            dLdx[i] += l[j]*dgdx[j][i]
-
-    return dLdx + g(x)
-
-def jacobian(F: Callable[[List[float]], List[float]],
-    f: Callable[[List[float]], List[float]], g: Callable[[List[float]], List[float]],
-    x: List[float], l: List[float], res: List[float], h: float = 1e-4) -> List[List[float]]:
-    """Returns the Jacobian of a system of non-linear algebraic equations
-    around the values, x, of the unknowns."""
-
-    nx, nl, m = len(x), len(l), len(res)
-
-    jac = [ [0.0 for _ in range(nx+nl)] for _ in range(m) ]
-    for j in range(nx):
-
-        x_f = x[:]
-        x_f[j] += h
-
-        res_f = F(f, g, x_f, l)
-
-        for i in range(m):
-            jac[i][j] = (res_f[i]-res[i])/h
-
-    for j in range(nl):
-
-        l_f = l[:]
-        l_f[j] += h
-
-        res_f = F(f, g, x, l_f)
-
-        for i in range(m):
-            jac[i][nx+j] = (res_f[i]-res[i])/h
-
-    return jac
+    return x, l

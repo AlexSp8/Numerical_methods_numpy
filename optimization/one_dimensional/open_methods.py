@@ -1,12 +1,12 @@
 
-from typing import Callable, Tuple, List
+from typing import Callable, List
 import scipy
 
 from differentiation import forward_fd as ffd
 
 def parabolic_interpolation(f: Callable[[float], float],
     a: float, b: float, mode: str = 'min',
-    eps: float = 1e-8, k_max: int = 1000) -> Tuple[float]:
+    eps: float = 1e-8, k_max: int = 1000) -> float:
     """Returns the extreme of a function f(x) in an interval [a, b]
     using the parabolic interpolation method"""
 
@@ -47,16 +47,16 @@ def parabolic_interpolation(f: Callable[[float], float],
             print(f'k = {k}. Rel. Error: {f"{err:.4e}"}')
             break
 
-    return x_opt, f_opt
+    return x_opt
 
 def secant(f: Callable[[float], float], x0: float,
-    eps: float = 1e-8, k_max: int = 1000, r: float = 1.0) -> Tuple[float]:
+    eps: float = 1e-8, k_max: int = 1000, r: float = 1.0) -> float:
     """Returns the extreme of a function f(x)
     around an initial guess, x0, using the Secant method"""
 
     # df = lambda x: ffd.df_h(f, x)
     # x = scipy.optimize.newton(func=df, x0=x0, tol=eps)
-    # return float(x), float(f(x))
+    # return float(x)
 
     xo = x0 + 0.01
     xc = x0
@@ -78,10 +78,10 @@ def secant(f: Callable[[float], float], x0: float,
         xo, dfo = xc, df
         xc = x
 
-    return x, f(x)
+    return x
 
 def newton(f: Callable[[float], float], x0: float,
-    eps: float = 1e-8, k_max: int = 1000, r: float = 1.0) -> Tuple[float]:
+    eps: float = 1e-8, k_max: int = 1000, r: float = 1.0) -> float:
     """Returns the extreme of a function f(x)
     around an initial guess, x0, using the Newton-Raphson method"""
 
@@ -89,7 +89,7 @@ def newton(f: Callable[[float], float], x0: float,
     # d2f = lambda x: ffd.d2f_h(f, x)
 
     # x = scipy.optimize.newton(func=df, x0=x0, fprime=d2f, tol=eps)
-    # return float(x), float(f(x))
+    # return float(x)
 
     x = x0
     for k in range(1, k_max+1):
@@ -110,11 +110,11 @@ def newton(f: Callable[[float], float], x0: float,
             print(f'k = {k}. Errors (df, rel): {[f"{e:.4e}" for e in err]}')
             break
 
-    return x, f(x)
+    return x
 
 def multi_open(f: Callable[[float], float],
     a: float, b: float, n: int, method: str,
-    mode: str = 'min') -> List[Tuple[float, float]]:
+    mode: str = 'min') -> List[float]:
     """Returns a list of extremes of a function f(x) in an interval [a, b]
     using an open method across n intervals"""
 
@@ -129,14 +129,14 @@ def multi_open(f: Callable[[float], float],
         b_int = a_int + dx
 
         if method == 'parabolic_interpolation':
-            x, fx = parabolic_interpolation(f, a_int, b_int, mode)
+            x = parabolic_interpolation(f, a_int, b_int, mode)
         elif method == 'secant':
-            x, fx = secant(f, a_int)
+            x = secant(f, a_int)
         elif method == 'newton':
-            x, fx = newton(f, a_int)
+            x = newton(f, a_int)
         else:
             raise ValueError('Invalid bracketing method!')
 
-        extremes.append((x, fx))
+        extremes.append(x)
 
     return extremes

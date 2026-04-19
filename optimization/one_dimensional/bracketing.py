@@ -1,27 +1,24 @@
 
-from typing import Callable, List, Tuple
+from typing import Callable, List
 import scipy
 
 def golden_section_search(f: Callable[[float], float],
     a: float, b: float, mode: str = 'min',
-    eps: float = 1e-8, k_max: int = 1000) -> Tuple[float]:
+    eps: float = 1e-8, k_max: int = 1000) -> float:
     """Returns the extreme of a function f(x) in an interval [a, b]
     using the golden-section search method"""
-
-    if mode == 'min':
-        g = f
-    else:
-        g = lambda x: -f(x)
-    # x = scipy.optimize.golden(g, brack=(a, b), tol=eps)
-    # return float(x), float(f(x))
-
-    # r = scipy.optimize.minimize_scalar(g, bounds=(a, b), method='bounded')
-    # return float(r.x), float(f(r.x))
 
     if mode == 'min':
         s = +1.0
     else:
         s = -1.0
+
+    # g = lambda x: s*f(x)
+    # x = scipy.optimize.golden(g, brack=(a, b), tol=eps)
+    # return float(x)
+
+    # r = scipy.optimize.minimize_scalar(g, bounds=(a, b), method='bounded')
+    # return float(r.x)
 
     golden_ratio = ((5.0**0.5)-1.0)/2.0
 
@@ -55,11 +52,11 @@ def golden_section_search(f: Callable[[float], float],
             print(f'k = {k}. Rel. Error: {f"{err:.4e}"}')
             break
 
-    return x_opt, f_opt
+    return x_opt
 
 def multi_bracketing(f: Callable[[float], float],
     a: float, b: float, n: int, method: str,
-    mode: str = 'min') -> List[Tuple[float, float]]:
+    mode: str = 'min') -> List[float]:
     """Returns a list of extremes of a function f(x) in an interval [a, b]
     using a bracketing method across n intervals"""
 
@@ -74,10 +71,10 @@ def multi_bracketing(f: Callable[[float], float],
         b_int = a_int + dx
 
         if method == 'golden-section':
-            x, fx = golden_section_search(f, a_int, b_int, mode)
+            x = golden_section_search(f, a_int, b_int, mode)
         else:
             raise ValueError('Invalid bracketing method!')
 
-        extremes.append((x, fx))
+        extremes.append(x)
 
     return extremes

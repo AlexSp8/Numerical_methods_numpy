@@ -1,10 +1,10 @@
 
-from typing import Callable, Tuple, List
+from typing import Callable, List
 import numpy as np
 import scipy
 
 def brent(f: Callable[[float], float], a0: float, b0: float, mode: str = 'min',
-    output: bool = False, eps: float = 1e-8, k_max: int = 1000) -> Tuple[float, float]:
+    output: bool = False, eps: float = 1e-8, k_max: int = 1000) -> float:
     """Returns the optimum of a function f(x) in an interval [a, b]
     using Brent's hybrid method"""
 
@@ -16,7 +16,7 @@ def brent(f: Callable[[float], float], a0: float, b0: float, mode: str = 'min',
     # x = scipy.optimize.fminbound(g, x1=a0, x2=b0, xtol=eps)
     # r = scipy.optimize.minimize_scalar(g, bounds=(a0,b0), method='bounded', options={'xatol': eps})
     # x = r.x
-    # return float(x), float(f(x))
+    # return float(x)
 
     a, b = min(a0,b0), max(a0,b0)
     phi = (3.0 - (5.0)**0.5) / 2.0
@@ -107,10 +107,10 @@ def brent(f: Callable[[float], float], a0: float, b0: float, mode: str = 'min',
             elif u_over_v:
                 v, fv = u, fu
 
-    return x, fx*s
+    return x
 
 def multi_hybrid(f: Callable[[float], float], a: float, b: float,
-    n: int, method: str, mode: str = 'min', output: bool = False) -> List[Tuple[float, float]]:
+    n: int, method: str, mode: str = 'min', output: bool = False) -> List[float]:
     """Returns a list of extremes of a function f(x) in an interval [a, b]
     using a hybrid method across n intervals"""
 
@@ -125,10 +125,10 @@ def multi_hybrid(f: Callable[[float], float], a: float, b: float,
         b_int = a_int + dx
 
         if method == 'brent':
-            x, fx = brent(f, a_int, b_int, mode, output)
+            x = brent(f, a_int, b_int, mode, output)
         else:
             raise ValueError('Invalid bracketing method!')
 
-        extremes.append((x, fx))
+        extremes.append(x)
 
     return extremes

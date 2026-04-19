@@ -1,52 +1,41 @@
 
-from typing import List
-import math
+from typing import Callable
 import numpy as np
 import numpy.typing as npt
 
-from optimization.unconstrained_1D import bracketing, open_methods, hybrid
-from optimization.unconstrained_multi import direct_methods, gradient_methods
+from optimization.unconstrained import direct_methods, gradient_methods
 
-def f(x: float) -> float:
-    """Test algebraic function."""
-    return 2*math.sin(x)-(x**2)/10
-
-def f_2D(x: npt.NDArray[np.float64]) -> float:
+def g(x: npt.NDArray[np.float64]) -> float:
     x, y = x[0], x[1]
     # return (x**2 + y - 11)**2 + (x + y**2 - 7)**2
     return 2*x*y + 2*x - x**2 - 2*(y**2)
 
+def g_p(x: npt.NDArray[np.float64], g: Callable[[npt.NDArray[np.float64]], float],
+    xp: npt.NDarray[np.float64], d: npt.NDarray[np.float64],
+    mode: str = 'min', p: float = 1e1) -> float:
+    """Test function with Gauss Radial penalty constraints"""
+
+    if mode == 'min':
+        s = +1.0
+    else:
+        s = -1.0
+
+    penalty = 0.0
+    for i in range(xp.shape[0]):
+        dist_sq = np.sum(((x - xp[i])/d[i])**2)
+        penalty += np.exp(-0.5*dist_sq)
+
+    return g(x) + s*p*penalty
+
 def main():
 
-    # print('1D unconstrained optimization')
+    print('\nUnconstrained optimization')
 
-    # print('\nBracketing')
-    # print('\nGolden-section search')
-    # print(bracketing.golden_section_search(f, a=0, b=4, mode='max'))
-    # print('\nMulti-Golden-section search')
-    # print(bracketing.multi_bracketing(f, a=0, b=10, n=2, method='golden-section', mode='max'))
+    f = g
 
-    # print('\nParabolic Interpolation')
-    # print(open_methods.parabolic_interpolation(f, a=0, b=4, mode='max'))
-    # print('\nMulti-Parabolic Interpolation')
-    # print(open_methods.multi_open(f, a=0, b=10, n=2, method='parabolic_interpolation', mode='max'))
+    # print('\nConstrained')
+    # f = lambda x: g_p(x, g, xp=np.array([[2.0, 1.0]]), d=np.array([0.1, 0.1]), mode='max', p=1e1)
 
-    # print('\nSecant')
-    # print(open_methods.secant(f, x0=1.0))
-    # print('\nMulti-Secant')
-    # print(open_methods.multi_open(f, a=0, b=10, n=2, method='secant'))
-
-    # print('\nNewton')
-    # print(open_methods.newton(f, x0=1.0))
-    # print('\nMulti-Newton')
-    # print(open_methods.multi_open(f, a=0, b=10, n=2, method='newton'))
-
-    # print('\nBrent method')
-    # print(hybrid.brent(f, a0=0, b0=4, mode='max', output=True))
-    # print('\nMulti-Brent method')
-    # print(hybrid.multi_hybrid(f, a=0, b=10, n=2, method='brent', mode='max', output=True))
-
-    print('\nMulti unconstrained optimization')
     print('\nPowell')
     # Starting guess
     x0 = np.array([0.0, 0.0])
@@ -55,18 +44,28 @@ def main():
         [1.0, 0.0],
         [0.0, 1.0]
     ])
-    # print(direct_methods.powell(f_2D, x0, d_vectors, mode='max'))
+    x = direct_methods.powell(f, x0, d_vectors, mode='max')
+    print(f"x = {x}, f = {g(x)}")
 
-    # print('\nSteepest Descent')
-    # print(gradient_methods.steepest_descent(f_2D, x0, mode='max'))
-    # print('\nConjugate Gradient')
-    # print(gradient_methods.conjugate_gradient(f_2D, x0, mode='max'))
-    # print('\nNewton')
-    print(gradient_methods.newton(f_2D, x0))
+    print('\nSteepest Descent')
+    x = gradient_methods.steepest_descent(f, x0, fd_type='ffd', mode='max')
+    print(f"x = {x}, f = {g(x)}")
+
+    print('\nConjugate Gradient')
+    x = gradient_methods.conjugate_gradient(f, x0, fd_type='ffd', mode='max')
+    print(f"x = {x}, f = {g(x)}")
+
+    print('\nNewton')
+    x = gradient_methods.newton(f, x0, fd_type='ffd')
+    print(f"x = {x}, f = {g(x)}")
+
     print('\nMarquardt')
-    print(gradient_methods.marquardt(f_2D, x0, mode='max'))
+    x = gradient_methods.marquardt(f, x0, fd_type='ffd')
+    print(f"x = {x}, f = {g(x)}")
+
     print('\nBFGS')
-    print(gradient_methods.bfgs(f_2D, x0, mode='max'))
+    x = gradient_methods.bfgs(f, x0, fd_type='ffd', mode='max')
+    print(f"x = {x}, f = {g(x)}")
 
 if __name__ == '__main__':
     main()

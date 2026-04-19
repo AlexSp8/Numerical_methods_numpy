@@ -204,7 +204,7 @@ The objective function and the constraint specify a linear programming problem.
 
 ### Lagrange Multipliers
 
-For only equality constraints we can use Lagrange multipliers, $\lambda_i$.
+For equality constraints we can use Lagrange multipliers, $\lambda_i$.
 The dimensionality of the problem is $n_x + n_e$, where $n_x$ is the number of original variables, $\underline{x}$, and $n_e$ is the number of equality constraints.
 We define the Lagrangian function:
 
@@ -239,3 +239,22 @@ $$\begin{bmatrix}
 \end{bmatrix}$$
 
 The solution is always a saddle point of the Lagrangian function.
+Aside from being a mathematical bridge, $\lambda$ has a physical meaning.
+In economics and engineering, $\lambda$ is often called the shadow price.
+It represents the rate of change of the optimal value of the objective function with respect to the constraint.
+
+### Augmented Lagrangian
+Combines Lagrange multipliers, $\lambda$, with penalty.
+Instead of the function, $f$, with constraints, $g$, we optimize:
+
+$$ L_A(x,\lambda,\rho) = f(x) + \lambda g(x) +
+\rho g^2(x)$$
+
+We perform unconstrained optimization on $L_A$, update $\lambda$ and increase the penalty $\rho$:
+
+$$ \lambda ^{(k+1)} = \lambda ^{(k)} + \rho ^{(k)} g(x) $$
+$$ \rho ^{(k+1)} = \rho ^{(k)} \gamma $$
+
+with $\gamma$ a constant.
+We repeat until convergence, i.e. $norm(g) < tol$.
+

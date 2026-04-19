@@ -51,7 +51,7 @@ class NewtonSolver:
             if hasattr(problem, 'jac'):
                 jac = problem.jac(u)
             else:
-                jac = self.jacobian(res, problem.res, u)
+                jac = self.jacobian(res, problem.f_res, u)
 
             # print(matrix_operations.condition_number(jac))
 
@@ -151,10 +151,10 @@ class MarquardtSolver(NewtonSolver):
                 if is_better:
                     u = u_trial
                     res = res_trial
-                    l /= s  # Move closer to pure Newton
+                    l /= s  # Move towards Newton
                     break
                 else:
-                    l *= s  # Move closer to Steepest Descent
+                    l *= s  # Move towards Steepest Descent
 
                 if l > 1e12:
                     break

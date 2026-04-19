@@ -1,15 +1,15 @@
 
-from typing import Callable, Tuple
+from typing import Callable
 import numpy as np
 import numpy.typing as npt
 
-from optimization.unconstrained_1D import hybrid
-from optimization.unconstrained_multi.line_search import LineSearch
+from optimization.one_dimensional import hybrid
+from optimization.unconstrained.line_search import LineSearch
 
 def powell(f: Callable[[npt.NDarray[np.float64]], float],
     x0: npt.NDarray[np.float64] = None,
     d: npt.NDarray[np.float64] = None, mode: str = 'min',
-    eps: float = 1e-8, k_max = 1000) -> Tuple[npt.NDarray[np.float64], float]:
+    eps: float = 1e-8, k_max = 1000) -> npt.NDarray[np.float64]:
     """Returns the point x(x1, x2, ..., xn) where the extreme of a
     multi-variable function, f, is found using Powell's method.
     A starting guess point, x0, and the initial direction vectors, d, should be given."""
@@ -38,7 +38,7 @@ def powell(f: Callable[[npt.NDarray[np.float64]], float],
             line_search.update(x, d_vectors[i])
 
             # Find h_opt (step size along i direction)
-            h_opt, _ = hybrid.brent(line_search.f_line, l_min, l_max, mode)
+            h_opt = hybrid.brent(line_search.f_line, l_min, l_max, mode)
 
             x_old = x.copy()
 
@@ -61,4 +61,4 @@ def powell(f: Callable[[npt.NDarray[np.float64]], float],
             d_vectors = np.delete(d_vectors, max_diff_dir, axis=0)
             d_vectors = np.vstack([d_vectors, d_new / norm])
 
-    return x, float(f(x))
+    return x
