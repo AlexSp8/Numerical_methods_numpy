@@ -1,48 +1,44 @@
 
-from typing import List, Tuple
+from typing import Tuple
 
-def nearest_index(xp: float, x: List[float] = None) -> int:
+import numpy as np
+
+def nearest_index(xp: float, x: np.NDArray,) -> int:
     """Returns the index of the value in sorted xi closest to xp."""
 
-    idx = 0
-    min_diff = abs(xp - x[0])
-    for i in range(1, len(x)):
-        diff = abs(xp - x[i])
-        if diff < min_diff:
-            min_diff = diff
-            idx = i
-    return idx
+    idx = np.searchsorted(x, xp)
 
-def starting_index(xp: float, x: List[float] = None, m: int = 1) -> int:
+    if idx == 0:
+        return 0
+
+    if idx == len(x):
+        return len(x) - 1
+
+    if abs(xp - x[idx-1]) < abs(xp - x[idx]):
+        return idx - 1
+    else:
+        return idx
+
+def starting_index(xp: float, x: np.NDArray, m: int = 1) -> int:
     """Returns the starting index of the sub-interval of
     size m+1 of xi that is centered around xp."""
 
-    n = len(x)
+    n = x.shape[0]
     idx = nearest_index(xp, x)
 
     i_start = idx - (m//2)
 
-    if i_start < 0:
-        i_start = 0
-    if i_start + m >= n:
-        i_start = n - (m + 1)
+    return max(0, min(i_start, n - (m + 1)))
 
-    return i_start
-
-def bubble_sort(x: List[float], y: List[float]) -> Tuple[List[float]]:
+def bubble_sort(x: np.NDArray, y: np.NDArray) -> Tuple[np.NDArray]:
 
     n = len(x)
-    x_sorted, y_sorted = x[:], y[:]
+    x_sorted, y_sorted = x.copy(), y.copy()
 
     for i in range(n):
         for j in range(n-i-1):
             if x_sorted[j] > x_sorted[j+1]:
-                temp_x = x_sorted[j]
-                x_sorted[j] = x_sorted[j+1]
-                x_sorted[j+1] = temp_x
-
-                temp_y = y_sorted[j]
-                y_sorted[j] = y_sorted[j+1]
-                y_sorted[j+1] = temp_y
+                x_sorted[j], x_sorted[j+1] = x_sorted[j+1], x_sorted[j]
+                y_sorted[j], y_sorted[j+1] = y_sorted[j+1], y_sorted[j]
 
     return x_sorted, y_sorted

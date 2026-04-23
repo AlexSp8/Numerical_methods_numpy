@@ -1,27 +1,25 @@
 
 from pathlib import Path
-from typing import List
-import math
 
-from utilities import io_utils, indexing
+import numpy as np
+
 from curve_fitting import fourier_transform
 
 # Path to the Datasets directory
 DATASETS_DIR = Path(__file__).parent / 'curve_fitting/data'
 
-
 def f_sin():
     N = 16
     fs, dt = 12.5, 0.01
-    f = [0.0]*N
+    f = np.zeros(N)
     for n in range(N):
         t = n*dt
-        f[n] = math.cos(2*math.pi*fs*t)
+        f[n] = np.cos(2*np.pi*fs*t)
     return f
     # N = 64
-    # f = [0.0]*N
+    # f = np.zeros(N)
     # for n in range(N):
-    #     val = math.sin(2 * math.pi * 3 * n / N)
+    #     val = np.sin(2 * np.pi * 3 * n / N)
     #     if val >= 0:
     #         f[n] = 1.0
     #     else:
@@ -30,15 +28,15 @@ def f_sin():
 
 def main():
 
-    print('\Discrete Fourier Transform')
+    print('\nDiscrete Fourier Transform')
     f = f_sin()
     re, im = fourier_transform.discrete_fourier_transform(f)
-    for k in range(len(re)):
+    for k in range(re.shape[0]):
         print(f"k = {k}: ({re[k]:.3f}, {im[k]:.3f})")
 
     print('\nFFT Sande Tukey')
     re, im = fourier_transform.fft_sande_tukey(f)
-    for k in range(len(re)):
+    for k in range(re.shape[0]):
         print(f"k = {k}: ({re[k]:.3f}, {im[k]:.3f})")
 
 
