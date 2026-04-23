@@ -96,7 +96,7 @@ class NewtonSolver:
 
         return jac
 
-class MarquardtSolver(NewtonSolver):
+class LevenbergMarquardtSolver(NewtonSolver):
 
     def __init__(self, *args, l0: float = 1e-3, scale: float = 10.0, **kwargs):
 
@@ -107,36 +107,45 @@ class MarquardtSolver(NewtonSolver):
     def solve(self, problem: NonlinearProblem,
         output: bool = False, ls_solver: LinearSolver = None) -> npt.NDArray[np.float64]:
         """Returns the solution of a non-linear system of algebraic equations, F,
-        around an initial guess, u0, using the Marquardt method"""
+        around an initial guess, u0, using the Levenberg-Marquardt method"""
 
         # u = scipy.optimize.fsolve(problem.res, self.u0)
         # return u
 
         solver = ls_solver or self.ls_solver
 
+        u = self.u0.copy()
+        res = problem.f_res(u)
+        ssr = np.sum(res**2)
+
+        n = self.u0.shape[0]
+        m = res.shape[0]
+
+        l = self.l0
         s = self.scale
 
-        n = len(self.u0)
-
-        u = self.u0.copy()
-
         for k in range(1, self.k_max+1):
-
-            res = problem.f_res(u)
 
             if hasattr(problem, 'jac'):
                 jac = problem.jac(u)
             else:
-                jac = self.jacobian(res, problem.res, u)
+                jac = self.jacobian(res, problem.f_res, u)
 
             # print(matrix_operations.condition_number(jac))
 
-            l = self.l0
+            if m != n:
+                jt = jac.T
+                j_mat = np.matmul(jt, jac)
+                b = -np.matmul(jt, res)
+            else:
+                j_mat = jac
+                b = -res
+
             for k2 in range(1, 21):
 
                 try:
-                    jac_damped = jac + l*np.eye(n)
-                    du = solver.solve(jac_damped, -res)
+                    jtj_damped = j_mat + l*np.eye(n)
+                    du = solver.solve(jtj_damped, b)
                 except:
                     l *= s
                     continue
@@ -147,10 +156,11 @@ class MarquardtSolver(NewtonSolver):
 
                 res_trial = problem.f_res(u_trial)
 
-                is_better = (np.linalg.norm(res_trial) < np.linalg.norm(res))
+                ssr_trial = np.sum(res_trial**2)
+
+                is_better = (ssr_trial < ssr)
                 if is_better:
-                    u = u_trial
-                    res = res_trial
+                    u, ssr, res = u_trial, ssr_trial ,res_trial
                     l /= s  # Move towards Newton
                     break
                 else:
@@ -163,7 +173,7 @@ class MarquardtSolver(NewtonSolver):
             if output:
                 print(f'k = {k} (k2: {k2}), Res Norm: {res_norm:.4e}, Cor Norm: {cor_norm:.4e}')
 
-            if self.is_converged(cor_norm, res_norm, 'and'):
+            if self.is_converged(cor_norm, res_norm, 'or'):
                 break
 
         return u

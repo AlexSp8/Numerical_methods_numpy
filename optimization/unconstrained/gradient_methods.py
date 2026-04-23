@@ -190,8 +190,8 @@ def marquardt(f: Callable[[npt.NDArray[np.float64]], float],
 
     ls_solver = direct_solver.LUSolver()
 
-    nr_solver = newton_solver.MarquardtSolver(ls_solver=ls_solver, u0=x0,
-        k_max=100, tol=1e-8, r=1.0, l0=1e-4, scale=2.0)
+    nr_solver = newton_solver.LevenbergMarquardtSolver(ls_solver=ls_solver, u0=x0,
+                                            k_max=100, tol=1e-8, r=1.0, l0=1e-4, scale=2.0)
 
     if fd_type == 'ffd':
         df = ffd.df_h

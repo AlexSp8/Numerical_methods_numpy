@@ -71,7 +71,9 @@ This library provides implementations of fundamental numerical algorithms:
 
 ### Requirements
 - Python 3.8 or higher
-- Standard library only (no external dependencies)
+- Standard library
+- numpy (2.4.4)
+- scipy (1.17.1) for built-in functions
 - matplotlib (3.10.8) for graphical solutions
 
 ### Install from source

@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import List
 
 
-def read_file_float_data(file_path):
+def read_file_float_data(file_path: str | Path) -> List[List[float]]:
     data = []
     with open(file_path, 'r') as f:
         for line in f:

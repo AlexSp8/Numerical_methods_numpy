@@ -10,7 +10,7 @@ class NonlinearProblem(ABC):
         self.f = f
 
     @abstractmethod
-    def f_res(self, x: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+    def f_res(self, u: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
         pass
 
 
@@ -105,12 +105,15 @@ class LagrangeMultiplier(NonlinearProblem):
 
 class Regression(NonlinearProblem):
 
-    def __init__(self, x_data, y_data):
-        self.x = x_data
-        self.y = y_data
+    def __init__(self, *args, xi: npt.NDArray[np.float64],
+        yi: npt.NDArray[np.float64], **kwargs):
 
-    def f_res(self, beta):
-        return beta[0]*np.exp(beta[1]*self.x) - self.y
+        super().__init__(*args, **kwargs)
+        self.xi = xi
+        self.yi = yi
+
+    def f_res(self, u: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+        return self.yi - self.f(u, self.xi)
 
 
 class PDESystem(NonlinearProblem):
