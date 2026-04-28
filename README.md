@@ -8,44 +8,48 @@ This library provides implementations of fundamental numerical algorithms:
 
 ### Root Finding (`roots`)
 - **Bracketing Methods**: Bisection, False Position, Multi-bracketing
-- **Open Methods**: Fixed Point, Newton-Raphson, Ralston-Rabinowitz
-- **Hybrid methods**: Brent's method
+- **Open Methods**: Fixed Point, Secant, IQI, Newton-Raphson, Ralston-Rabinowitz, Multi-Open
+- **Hybrid methods**: Brent, Ridders, Chandrupatla, Multi-Hybrid
 
 ### Linear Systems (`linear_systems`)
-- **Direct Solvers**: Cramer's Rule, Gaussian Elimination, LU Decomposition, Thomas Algorithm (tri-diagonal)
-- **Iterative Solvers**: Jacobi, Successive Over-Relaxation (SOR), Steepest Descent Conjugate Gradient
+- Linear solver abstract class
+- **Direct Solver classes**: Cramer's Rule, Gaussian Elimination, LU Decomposition, Thomas Algorithm (tri-diagonal routine)
+- **Iterative Solver classes**: Jacobi, Successive Over-Relaxation (SOR), Steepest Descent, Conjugate Gradient
 
 ### Non-Linear Systems (`non_linear_systems`)
-- Newton-Raphson method
+- Newton-Raphson Solver class
+- Levenberg-Marquardt Solver class
 
 ### Optimization (`optimization`)
-#### Unconstrained 1D
-- **Bracketing Methods**: Golden-section search, Parabola interpolation, Multi-Bracketing, Brent's method
-- **Open Methods**: Newton-Raphson
+#### 1D optimization (`one_dimensional`)
+- **Bracketing Methods**: Golden-section search, Multi-Bracketing
+- **Open Methods**: Parabolic Interpolation, Secant, Newton-Raphson, Multi-open
+- **Hybrid Methods**: Brent, Multi-hybrid
 
-#### Unconstrained multi-dimensional
-- **Direct Methods**: Powell's method
+#### Unconstrained
+- **Direct Methods**: Powell
 - **Gradient Methods**: Steepest Descent, Conjugate Gradient, Newton, Marquardt, BFGS
+- Line search helper class for 1D optimization.
 
 #### Constrained
-- **Equality Constraints Methods**: Lagrange multipliers
+- **Equality Constraints Methods**: Lagrange multipliers, Augmented Lagrangian
 
 ### Curve Fitting (`curve_fitting`)
-**Regression**: Linear, Polynomial, Multi-linear, Non-linear (Marquardt-Levenberg)
+- **Regression**: Linear, Polynomial, Multi-linear, Non-linear (Levenberg-Marquardt)
 
-**Interpolation**: Vandermonde, Newton-Gregory polynomials, Lagrange polynomials, Splines (linear, quadratic, cubic), Multi-dimensional interpolation (using 1D method)
+- **Interpolation**: Vandermonde, Newton-Gregory polynomials, Lagrange polynomials, Splines (linear, quadratic, cubic)
 
-**Fourier Transform**: Discrete Fourier Transform (DFT), Fast Fourier Transform (FFT) Sande-Tukey
+- **Fourier Transform**: Discrete Fourier Transform (DFT), Fast Fourier Transform (FFT) Sande-Tukey
 
 ### Integration
-**Function integration**: Composite Trapezoidal, Composite Simpson 1/3, Simpson 3/8, Mixed Simpson, Romberg, Gauss-Legendre (1D, 2D, multi-dimensional, points-weights coefficients evaluation)
-**Data Integration**: Trapezoidal, Simpson 1/3, Simpson Mixed (1D, 2D, multi-dimensional)
+- **Function Integration**: Trapezoidal, Simpson 1/3, Simpson 3/8, Mixed Simpson, Romberg, Gauss-Legendre (1D, 2D, multi-dimensional, points-weights coefficients evaluation)
+- **Data Integration**: Trapezoidal, Simpson 1/3, Simpson Mixed (1D, 2D, multi-dimensional)
 
 ### Differentiation
-**Finite Differences**: Forward ($O(h), O(h^2)$), Backward ($O(h), O(h^2)$), Central ($O(h^2), O(h^4)$) up to fourth order.\
-**Partial Derivatives**: Grad, Hessian.\
-**Function Differentiation**: Richardson Extrapolation\
-**Data Differentiation**: Divided Differences
+- **Finite Differences**: Forward ($O(h), O(h^2)$), Backward ($O(h), O(h^2)$), Central ($O(h^2), O(h^4)$) up to fourth order.
+- **Partial Derivatives**: Grad, Hessian.
+- **Function Differentiation**: Richardson Extrapolation
+- **Data Differentiation**: Divided Differences
 
 ### ODEs
 #### Explicit Methods
