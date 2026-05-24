@@ -1,40 +1,43 @@
 
 from typing import Callable
 import numpy as np
-import numpy.typing as npt
 
 from optimization.unconstrained import direct_methods, gradient_methods
+from differentiation import forward_fd as ffd
 
-def g(x: npt.NDArray[np.float64]) -> float:
+def g(x: np.ndarray[tuple[int], np.dtype[np.float64]]) -> float:
     x, y = x[0], x[1]
-    # return (x**2 + y - 11)**2 + (x + y**2 - 7)**2
-    return 2*x*y + 2*x - x**2 - 2*(y**2)
+    return (x**2 + y - 11)**2 + (x + y**2 - 7)**2
 
-def g_p(x: npt.NDArray[np.float64], g: Callable[[npt.NDArray[np.float64]], float],
-    xp: npt.NDarray[np.float64], d: npt.NDarray[np.float64],
-    mode: str = 'min', p: float = 1e1) -> float:
+def g_max(x: np.ndarray[tuple[int], np.dtype[np.float64]]) -> float:
+    x, y = x[0], x[1]
+    return -(2*x*y + 2*x - x**2 - 2*(y**2))
+
+def g_p(x: np.ndarray[tuple[int], np.dtype[np.float64]],
+    g: Callable[[np.ndarray[tuple[int], np.dtype[np.float64]]], float],
+    xp: np.ndarray[tuple[int], np.dtype[np.float64]],
+    d: np.ndarray[tuple[int], np.dtype[np.float64]],
+    p: float = 1e1) -> float:
     """Test function with Gauss Radial penalty constraints"""
-
-    if mode == 'min':
-        s = +1.0
-    else:
-        s = -1.0
 
     penalty = 0.0
     for i in range(xp.shape[0]):
         dist_sq = np.sum(((x - xp[i])/d[i])**2)
         penalty += np.exp(-0.5*dist_sq)
+        # penalty -= np.exp(-0.5*dist_sq)
 
-    return g(x) + s*p*penalty
+    return g(x) + p*penalty
 
 def main():
 
     print('\nUnconstrained optimization')
 
-    f = g
+    # f = g
+    f = g_max
 
     # print('\nConstrained')
     # f = lambda x: g_p(x, g, xp=np.array([[2.0, 1.0]]), d=np.array([0.1, 0.1]), mode='max', p=1e1)
+    # f = lambda x: g_p(x, g_max, xp=np.array([[2.0, 1.0]]), d=np.array([0.1, 0.1]), mode='max', p=1e1)
 
     print('\nPowell')
     # Starting guess
@@ -44,28 +47,38 @@ def main():
         [1.0, 0.0],
         [0.0, 1.0]
     ])
-    x = direct_methods.powell(f, x0, d_vectors, mode='max')
-    print(f"x = {x}, f = {g(x)}")
+    x = direct_methods.powell(f, x0, d_vectors)
+    print(f"x = {x}, f = {f(x)}")
 
     print('\nSteepest Descent')
-    x = gradient_methods.steepest_descent(f, x0, fd_type='ffd', mode='max')
-    print(f"x = {x}, f = {g(x)}")
+    df = ffd.df_h
+    x = gradient_methods.steepest_descent(f, x0, df=df)
+    print(f"x = {x}, f = {f(x)}")
 
     print('\nConjugate Gradient')
-    x = gradient_methods.conjugate_gradient(f, x0, fd_type='ffd', mode='max')
-    print(f"x = {x}, f = {g(x)}")
+    df = ffd.df_h
+    x = gradient_methods.conjugate_gradient(f, x0, df=df)
+    print(f"x = {x}, f = {f(x)}")
 
     print('\nNewton')
-    x = gradient_methods.newton(f, x0, fd_type='ffd')
-    print(f"x = {x}, f = {g(x)}")
+    df = ffd.df_h
+    x = gradient_methods.newton(f, x0, df=df)
+    print(f"x = {x}, f = {f(x)}")
 
     print('\nMarquardt')
-    x = gradient_methods.marquardt(f, x0, fd_type='ffd')
-    print(f"x = {x}, f = {g(x)}")
+    df = ffd.df_h
+    x = gradient_methods.marquardt(f, x0, df=df)
+    print(f"x = {x}, f = {f(x)}")
 
     print('\nBFGS')
-    x = gradient_methods.bfgs(f, x0, fd_type='ffd', mode='max')
-    print(f"x = {x}, f = {g(x)}")
+    df = ffd.df_h
+    x = gradient_methods.bfgs(f, x0, df=df, output=True)
+    print(f"x = {x}, f = {f(x)}")
+
+    print('\nL-BFGS')
+    df = ffd.df_h
+    x = gradient_methods.l_bfgs(f, x0, df=df, output=True)
+    print(f"x = {x}, f = {f(x)}")
 
 if __name__ == '__main__':
     main()

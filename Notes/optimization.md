@@ -6,60 +6,66 @@ We can use bracketing methods to search in a particular interval or we can use o
 With direct methods we only evaluate the function without its derivatives.
 With gradient methods we also evaluate the derivatives of the function. Thus, we refer to first-order (gradient) or second-order (hessian) methods.
 
+We formulate algorithms to find minimum values of a function $f$.
+Maxima can be found by studying the function $-f$.
+
 ## Unconstrained optimization
 
 ### 1D unconstrained optimization
 We have a single function that depends on a single variable, x.
-We want to find the value of x where the function exhibits a local extreme.
+We want to find the value of x where the function exhibits a local minimum.
 
 #### Bracketing
 These methods are similar to the bracketing methods for finding roots of equations.
-We search for an extreme of the function at a specified interval.
-These methods will find the optimum value in the interval if the function is unimodal.
+We search for a minimum of the function at a specified interval.
+These methods will find the minimum value in the interval if the function is unimodal.
 
 ##### Golden-section search
 It is the analog of the bisection method for finding the roots of an equation.
-We start with two points, $x_l$ and $x_u$, that bracket a local extremum of the function.
+We start with two points, $x_l$ and $x_u$, that bracket a local minimum of the function.
 We choose two more points:
 
-$$x_1 = x_l + d, \; x_2 = x_u - d$$
+$$ x_1 = x_u - d, \; x_2 = x_l + d $$
 
 where $d = \frac{\sqrt{5}-1}{2}(x_u - x_l)$ is the distance between the interval points multiplied by the golden ratio.
-Thus, $x_l < x_2 < x_1 < x_u$. Next, we evaluate $f(x_1), f(x_2)$.
-When searching for a maximum:
-*   *If $f(x_1) > f(x_2)$:*\
-The maximum is in the $[x_2, x_1, x_u]$ interval.\
-We disregard the domain $[x_l, x_2]$.\
-$x_l$ is replaced by $x_2$ ($x_l^{(k)} \to x_2^{(k-1)}$).\
-$x_2$ is replaced by $x_1$ ($x_2^{(k)} \to x_1^{(k-1)}$).\
-The new $x_1^{(k)} = x_l^{(k)} + d^{(k)}$ is the new optimum.\
+Thus, $x_l < x_1 < x_2 < x_u$. Next, we evaluate $f(x_2), f(x_1)$.
+When searching for a minimum:
+*   *If $f(x_2) < f(x_1)$:*\
+The minimum is in the $[x_1, x_2, x_u]$ interval.
+We disregard the domain $[x_l, x_1]$.\
+$x_l$ is replaced by $x_1$ ($x_l^{(k)} \to x_1^{(k-1)}$).
+$x_1$ is replaced by $x_2$ ($x_1^{(k)} \to x_2^{(k-1)}$).\
+The new $x_2^{(k)} = x_l^{(k)} + d^{(k)}$ is the new optimum.\
 The domain reduces by a factor of $\frac{\sqrt{5}-1}{2}$:
 
-$$x_{int}^{(k)} = x_u^{(k)} - x_l^{(k)} = x_u^{(k)} - x_2^{(k-1)} = $$
+$$x_{int}^{(k)} = x_u^{(k)} - x_l^{(k)} = x_u^{(k)} - x_1^{(k-1)} = $$
 $$x_u^{(k)} - x_u^{(k-1)} + d^{(k-1)} \to $$
 $$x_{int}^{(k)} = d^{(k-1)}$$
 
-*   *If $f(x_2) > f(x_1)$:*\
-The maximum is in the $[x_l, x_2, x_1]$ interval.\
-We remove the domain from $x_1$ to $x_u$.\
-$x_u$ is replaced by $x_1$ ($x_u^{(k)} \to x_1^{(k-1)}$)\
-$x_1$ is replaced by $x_2$ ($x_1^{(k)} \to x_2^{(k-1)}$)\
-The new $x_2^{(k)} = x_u^{(k)} - d^{(k)}$ is the new optimum.\
+*   *If $f(x_1) < f(x_2)$:*\
+The minimum is in the $[x_l, x_1, x_2]$ interval.
+We remove the domain $[x_2, x_u]$.\
+$x_u$ is replaced by $x_2$ ($x_u^{(k)} \to x_2^{(k-1)}$)
+$x_2$ is replaced by $x_1$ ($x_1^{(k)} \to x_1^{(k-1)}$)\
+The new $x_1^{(k)} = x_u^{(k)} - d^{(k)}$ is the new optimum.\
 The domain again reduces by a factor of $\frac{\sqrt{5}-1}{2}$:
 
-$$x_{int}^{(k)} = x_u^{(k)} - x_l^{(k)} = x_1^{(k-1)} - x_l^{(k)} = $$
+$$x_{int}^{(k)} = x_u^{(k)} - x_l^{(k)} = x_2^{(k-1)} - x_l^{(k)} = $$
 $$x_l^{(k-1)} + d^{(k-1)} - x_l^{(k)} \to $$
 $$x_{int}^{(k)} = d^{(k-1)}$$
 
 #### Open methods
+Open methods usually try to find the point where $f'(x) = 0$.
+This does not guarantee that they find a minimum.
+If the initial guess is close to a maximum they will falsely give this result.
 
 ##### Parabolic interpolation
 A $2^{\text{nd}}$ order polynomial is often a good approximation of a function near an optimum value.
 If we fit the function with a parabola using 3 points ($x_0 < x_1 < x_2$) around an interval, we can differentiate the parabola and set it to 0.
 This will give an estimation of the optimal $x_{opt}$:
 
-$$x_{opt} = x_2+\frac{1}{2} \frac{(x_2^2 - x_0^2)[f(x_2)-f(x_1)] - (x_2^2 - x_1^2)[f(x_2)-f(x_0)]}
-{(x_2 - x_0)[f(x_2)-f(x_1)] - (x_2 - x_1)[f(x_2)-f(x_0)]}$$
+$$x_{opt} = x_1-\frac{1}{2} \frac{(x_1 - x_0)^2(f_1-f_2) - (x_1 - x_2)^2(f_1-f_0)}
+{(x_1 - x_0)(f_1-f_2) - (x_1 - x_2)(f_1-f_0)}$$
 
 Depending on the values of $x_{opt}$ and $f(x_{opt})$ we update the interval and repeat the process similar to the golden-section search method.
 
@@ -82,6 +88,10 @@ This can be derived from $2^{\text{nd}}$ order Taylor series expansion of $f(x)$
 Analogous to Brent’s method for root finding, it uses parabolic interpolation whenever possible to converge fast, but reverts to golden-section search when necessary.
 
 ### Multi-dimensional unconstrained optimization
+The methods are not guaranteed to find a global minimum.
+For non-convex functions they will stop at the first optimum (minimum, maximum, saddle point).
+Modern algorithms use momentum, random restarts or hessian eigenvalue checks.
+
 #### Direct methods
 In direct methods, we find the optimum point $\underline{x}$ without evaluating derivatives of the function $f(\underline{x})$.
 
@@ -183,6 +193,43 @@ Then, we update the inverse Hessian approximation (starting from $\underline{\un
 
 $$\underline{\underline{\tilde{H}}}^{-1^{(k)}} = \left( \underline{\underline{I}} - \frac{d\underline{x}^{(k-1)} d\underline{y}^{(k-1)^T}}{d\underline{y}^{(k-1)^T} d\underline{x}^{(k-1)}} \right) \underline{\underline{\tilde{H}}}^{-1^{(k-1)}} \left( \underline{\underline{I}} - \frac{d\underline{y}^{(k-1)} d\underline{x}^{(k-1)^T}}{d\underline{y}^{(k-1)^T} d\underline{x}^{(k-1)}} \right) + \frac{d\underline{x}^{(k-1)} d\underline{x}^{(k-1)^T}}{d\underline{y}^{(k-1)^T} d\underline{x}^{(k-1)}}$$
 
+##### L-BFGS
+The limited memory BFGS method is designed to reduced the computational demands of BFGS.
+It does not store an $n \times n$ matrix for the Hessian.
+Instead it stores the quantities from the last $m$ steps to calculate the new search direction.
+At every successful step, we save three things to the history (up to a maximum of $m$ items):
+
+$s_k = x_{k+1} - x_k$ (The position step)
+
+$y_k = \nabla f(x_{k+1}) - \nabla f(x_k)$ (The gradient step)
+
+$\rho_k = \frac{1}{y_k^T s_k}$ (The scaling scalar)
+
+If the history hits the limit $m$, we delete the oldest record to make room for the newest.
+
+$$q = \nabla f(x_k)$$
+
+To find the search direction $p$, we run the current gradient through two loops.\
+Loop 1: We loop from the most recent history to the oldest.
+
+$$\alpha_i = \rho_i s_i^T q$$
+
+$$q = q - \alpha_i y_i$$
+
+The Center Scale: We estimate the initial Hessian scale using the most recent step:
+
+$$\gamma = \frac{s_{recent}^T y_{recent}}{y_{recent}^T y_{recent}}$$
+
+$$z = \gamma q$$
+
+Loop 2 (Forwards): We loop from the oldest history back to the newest.For $i = \text{oldest}$ up to $\text{newest}$:
+
+$$\beta = \rho_i y_i^T z$$
+
+$$z = z + s_i (\alpha_i - \beta)$$
+
+The final result $z$ is exactly equal to $H \cdot g$. Our search direction is simply $p = -z$.
+
 ## Constrained Optimization
 We want to find the optimum value of an objective function $f(\underline{x})$ subject to constraints.
 The constraints can be equality constraints, $g_i(\underline{x}) = c_i$ for $i = 1, \dots, n$ equality constraints.
@@ -248,7 +295,7 @@ Combines Lagrange multipliers, $\lambda$, with penalty.
 Instead of the function, $f$, with constraints, $g$, we optimize:
 
 $$ L_A(x,\lambda,\rho) = f(x) + \lambda g(x) +
-\rho g^2(x)$$
+\frac{1}{2} \rho g^2(x)$$
 
 We perform unconstrained optimization on $L_A$, update $\lambda$ and increase the penalty $\rho$:
 

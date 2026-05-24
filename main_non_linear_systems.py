@@ -1,13 +1,14 @@
 
 import math
 import numpy as np
-import numpy.typing as npt
 
 from non_linear_systems import newton_solver, non_linear_problem
 from linear_systems import direct_solver
 
-def F(x: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+def F(x: np.ndarray[tuple[int], np.dtype[np.float64]]
+    ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
     """Test system of non-linear algebraic equations in residual form."""
+
     return np.array([
         x[0]**2 + x[1]**2 - 4,
         math.exp(x[0]) + x[1] - 1

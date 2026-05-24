@@ -1,48 +1,54 @@
 
-from typing import Tuple
-
 import numpy as np
-import numpy.typing as npt
 
 from linear_systems.linear_solver import LinearSolver
 
 class IterativeSolver(LinearSolver):
 
     def __init__(self, *args, k_max: int = 1000, tol: float = 1e-8,
-        x0: npt.NDArray[np.float64] = None, **kwargs):
+        x0: np.ndarray[tuple[int], np.dtype[np.float64]] = None, **kwargs):
 
         super().__init__(*args, **kwargs)
         self.k_max = k_max
         self.tol = tol
         self.x0 = x0
 
-    def set_initial_guess(self, A: npt.NDArray[np.float64],
-        b: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+    def set_initial_guess(self, A: np.ndarray[tuple[int, int], np.dtype[np.float64]],
+        b: np.ndarray[tuple[int], np.dtype[np.float64]]
+        ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+        """Sets the initial guess for the solution vector.
+
+        Args:
+            A: the matrix of the linear system
+            b: the right-hand side vector of the linear system
+        Returns:
+            The initial guess for the solution vector, x0."""
 
         if self.x0 is not None:
             return self.x0.copy()
 
-        n = A.shape[0]
         diagA = np.diag(A)
 
         if np.any(diagA == 0):
+            n = A.shape[0]
             return np.ones(n)
         else:
             return b/diagA
 
-    def get_norms(self, dx: npt.NDArray[np.float64], res: npt.NDArray[np.float64]
-        ) -> Tuple[float, float]:
-        """Returns the correction and residual norms."""
+    def get_norms(self, dx: np.ndarray[tuple[int], np.dtype[np.float64]],
+        res: np.ndarray[tuple[int], np.dtype[np.float64]]) -> tuple[float, float]:
+        """Returns the norms of the correction and residual vectors.
+
+        Args:
+            dx: the correction vector
+            res: the residual vector
+        Returns:
+            The correction and residual norms."""
+
         cor_norm = np.linalg.norm(dx)
         res_norm = np.linalg.norm(res)
-        return cor_norm, res_norm
 
-    def is_converged(self, cor_norm: float, res_norm: float, mode: str = 'and') -> bool:
-        """Checks the correction and residual norm convergence criteria."""
-        if mode == 'and':
-            return (res_norm < self.tol) and (cor_norm < self.tol)
-        else:
-            return (res_norm < self.tol) or (cor_norm < self.tol)
+        return cor_norm, res_norm
 
 
 class JacobiSolver(IterativeSolver):
@@ -51,10 +57,18 @@ class JacobiSolver(IterativeSolver):
 
         super().__init__(*args, **kwargs)
 
-    def solve(self, A: npt.NDArray[np.float64], b: npt.NDArray[np.float64],
-        output: bool = False) -> npt.NDArray[np.float64]:
-        """Returns the solution, x, to a system of linear algebraic equations,
-        Ax = b, using the Jacobi iterative method."""
+    def solve(self, A: np.ndarray[tuple[int, int], np.dtype[np.float64]],
+        b: np.ndarray[tuple[int], np.dtype[np.float64]],
+        output: bool = False) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+        """Returns the solution vector of a linear system of algebraic equations
+        (Ax = b) with the Jacobi method.
+
+        Args:
+            A: the matrix of the linear system
+            b: the right-hand side vector of the linear system
+            output: flag for iteration info output
+        Returns:
+            The solution vector of the linear system, x."""
 
         diagA = np.diag(A)
         if any(diagA == 0):
@@ -66,33 +80,40 @@ class JacobiSolver(IterativeSolver):
 
             x_old = x.copy()
 
-            res = self.get_residual(A, b, x_old)
+            res = self.get_residual(A, b, x)
 
             x = x_old + res/diagA
 
             cor_norm, res_norm = self.get_norms(x-x_old, res)
 
-            if self.is_converged(cor_norm, res_norm, 'and'):
-                break
+            if output:
+                print(f'k = {k}, Res Norm = {res_norm:.4e}, Cor Norm = {cor_norm:.4e}')
 
-        if output:
-            print(f'k = {k}, Res Norm = {res_norm:.4e}, Cor Norm = {cor_norm:.4e}')
+            if (res_norm < self.tol) and (cor_norm < self.tol):
+                break
 
         return x
 
 
 class SORSolver(IterativeSolver):
 
-    def __init__(self, *args, w=1.5, **kwargs):
+    def __init__(self, *args, w: float = 1.5, **kwargs):
 
         super().__init__(*args, **kwargs)
         self.w = w
 
-    def solve(self, A: npt.NDArray[np.float64], b: npt.NDArray[np.float64],
-        output: bool = False) -> npt.NDArray[np.float64]:
-        """Returns the solution, x, to a system of linear algebraic equations,
-        Ax = b, using the SOR iterative method. The relaxation can be optionally
-        given. For ω = 1, the Gauss-Seidel method is used."""
+    def solve(self, A: np.ndarray[tuple[int, int], np.dtype[np.float64]],
+        b: np.ndarray[tuple[int], np.dtype[np.float64]],
+        output: bool = False) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+        """Returns the solution vector of a linear system of algebraic equations
+        (Ax = b) with the SOR method.
+
+        Args:
+            A: the matrix of the linear system
+            b: the right-hand side vector of the linear system
+            output: flag for iteration info output
+        Returns:
+            The solution vector of the linear system, x."""
 
         n = A.shape[0]
 
@@ -112,13 +133,14 @@ class SORSolver(IterativeSolver):
                 x[i] += self.w*res[i]/diagA[i]
 
             res = self.get_residual(A, b, x)
+
             cor_norm, res_norm = self.get_norms(x-x_old, res)
 
-            if self.is_converged(cor_norm, res_norm, 'and'):
-                break
+            if output:
+                print(f'k = {k}, Res Norm = {res_norm:.4e}, Cor Norm = {cor_norm:.4e}')
 
-        if output:
-            print(f'k = {k}, Res Norm = {res_norm:.4e}, Cor Norm = {cor_norm:.4e}')
+            if (res_norm < self.tol) and (cor_norm < self.tol):
+                break
 
         return x
 
@@ -128,10 +150,18 @@ class SDSolver(IterativeSolver):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def solve(self, A: npt.NDArray[np.float64], b: npt.NDArray[np.float64],
-        output: bool = False) -> npt.NDArray[np.float64]:
-        """Returns the solution, x, to a system of linear algebraic equations,
-        Ax = b, using the Steepest Descent iterative method."""
+    def solve(self, A: np.ndarray[tuple[int, int], np.dtype[np.float64]],
+        b: np.ndarray[tuple[int], np.dtype[np.float64]],
+        output: bool = False) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+        """Returns the solution vector of a linear system of algebraic equations
+        (Ax = b) with the Steepest Descent method.
+
+        Args:
+            A: the matrix of the linear system
+            b: the right-hand side vector of the linear system
+            output: flag for iteration info output
+        Returns:
+            The solution vector of the linear system, x."""
 
         x = self.set_initial_guess(A, b)
 
@@ -155,11 +185,11 @@ class SDSolver(IterativeSolver):
             # res_norm = np.sqrt(rr)
             cor_norm, res_norm = self.get_norms(x-x_old, r)
 
-            if self.is_converged(cor_norm, res_norm, 'or'):
-                break
+            if output:
+                print(f'k = {k}, Res Norm = {res_norm:.4e}, Cor Norm = {cor_norm:.4e}')
 
-        if output:
-            print(f'k = {k}, Res Norm = {res_norm:.4e}, Cor Norm = {cor_norm:.4e}')
+            if (res_norm < self.tol) or (cor_norm < self.tol):
+                break
 
         return x
 
@@ -169,10 +199,18 @@ class CGSolver(IterativeSolver):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def solve(self, A: npt.NDArray[np.float64], b: npt.NDArray[np.float64],
-        output: bool = False) -> npt.NDArray[np.float64]:
-        """Returns the solution, x, to a system of linear algebraic equations,
-        Ax = b, using the Conjugate Gradient iterative method."""
+    def solve(self, A: np.ndarray[tuple[int, int], np.dtype[np.float64]],
+        b: np.ndarray[tuple[int], np.dtype[np.float64]],
+        output: bool = False) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+        """Returns the solution vector of a linear system of algebraic equations
+        (Ax = b) with the Conjugate Gradient method.
+
+        Args:
+            A: the matrix of the linear system
+            b: the right-hand side vector of the linear system
+            output: flag for iteration info output
+        Returns:
+            The solution vector of the linear system, x."""
 
         # x, info = scipy.sparse.linalg.cg(A, b, tol=self.tol)
         # return x
@@ -199,15 +237,15 @@ class CGSolver(IterativeSolver):
             # res_norm = np.sqrt(rr)
             cor_norm, res_norm = self.get_norms(x-x_old, r)
 
-            if self.is_converged(cor_norm, res_norm, 'or'):
+            if output:
+                print(f'k = {k}, Res Norm = {res_norm:.4e}, Cor Norm = {cor_norm:.4e}')
+
+            if (res_norm < self.tol) or (cor_norm < self.tol):
                 break
 
             beta = rr/rr_old
             p = r + beta*p
 
             rr_old = rr
-
-        if output:
-            print(f'k = {k}, Res Norm = {res_norm:.4e}, Cor Norm = {cor_norm:.4e}')
 
         return x

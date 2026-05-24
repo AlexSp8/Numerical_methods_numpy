@@ -9,7 +9,7 @@ This library provides implementations of fundamental numerical algorithms:
 ### Root Finding (`roots`)
 - **Bracketing Methods**: Bisection, False Position, Multi-bracketing
 - **Open Methods**: Fixed Point, Secant, IQI, Newton-Raphson, Ralston-Rabinowitz, Multi-Open
-- **Hybrid methods**: Brent, Ridders, Chandrupatla, Multi-Hybrid
+- **Hybrid methods**: Brent, Ridders, Chandrupatla
 
 ### Linear Systems (`linear_systems`)
 - Linear solver abstract class
@@ -19,20 +19,21 @@ This library provides implementations of fundamental numerical algorithms:
 ### Non-Linear Systems (`non_linear_systems`)
 - Newton-Raphson Solver class
 - Levenberg-Marquardt Solver class
+- Non-linear problem classes: Regular, Optimization, Lagrange Multipliers, Regression
 
 ### Optimization (`optimization`)
 #### 1D optimization (`one_dimensional`)
 - **Bracketing Methods**: Golden-section search, Multi-Bracketing
-- **Open Methods**: Parabolic Interpolation, Secant, Newton-Raphson, Multi-open
-- **Hybrid Methods**: Brent, Multi-hybrid
+- **Open Methods**: Parabolic Interpolation, Secant, Newton-Raphson
+- **Hybrid Methods**: Brent
 
-#### Unconstrained
+#### Unconstrained (`unconstrained`)
 - **Direct Methods**: Powell
-- **Gradient Methods**: Steepest Descent, Conjugate Gradient, Newton, Marquardt, BFGS
+- **Gradient Methods**: Steepest Descent, Conjugate Gradient, Newton, Marquardt, BFGS, L-BFGS (+ Strong Wolfe conditions line search)
 - Line search helper class for 1D optimization.
 
-#### Constrained
-- **Equality Constraints Methods**: Lagrange multipliers, Augmented Lagrangian
+#### Constrained (`constrained`)
+- **Equality Constraints**: Lagrange multipliers, Augmented Lagrangian
 
 ### Curve Fitting (`curve_fitting`)
 - **Regression**: Linear, Polynomial, Multi-linear, Non-linear (Levenberg-Marquardt)
@@ -53,20 +54,19 @@ This library provides implementations of fundamental numerical algorithms:
 
 ### ODEs
 #### Explicit Methods
-**RK1**: Explicit Euler \
-**RK2**: General method, Heun's method, Midpoint \
-**RK3**: General method (+coefficients evaluation) \
-**RK4**: Classic RK4 method \
-**RK5**: Butcher's RK5 method \
-**Adaptive step methods**: RK45 Fehlberg, RK45 Cash-Karp, RK45 Dormand-Prince \
-**Adams-Bashforth**: Explicit multistep \
-**Implicit**: Euler, Midpoint, Crank-Nicolson, Gauss-Legendre (2- and 3-stage), Radau-IIA (2- and 3-stage), Lobatto IIIC-2, Lobatto IIIA-3, Adams-Moulton \
-**BVP 1D**: $2^{nd}$ order non-linear BVP 1D
-**EVP 1D**: $2^{nd}$ order linear EVP 1D (Sturm-Liouville)
+- **RK1**: Explicit Euler
+- **RK2**: General method, Heun's method, Midpoint
+- **RK3**: General method (+coefficients evaluation)
+- **RK4**: Classic RK4 method
+- **RK5**: Butcher's RK5 method
+- **Adaptive step methods**: RK45 Fehlberg, RK45 Cash-Karp, RK45 Dormand-Prince
+- **Adams-Bashforth**: Explicit multistep
+- **Implicit**: Euler, Midpoint, Crank-Nicolson, Gauss-Legendre (2- and 3-stage), Radau-IIA (2- and 3-stage), Lobatto IIIC-2, Lobatto IIIA-3, Adams-Moulton
+- **BVP 1D**: $2^{nd}$ order non-linear BVP 1D
+- **EVP 1D**: $2^{nd}$ order linear EVP 1D (Sturm-Liouville)
 
 ### Utilities (`utilities`)
 - Matrix operations (addition, multiplication, transpose, determinant, inverse, etc.)
-- Vector operations (norm, dot product)
 - Statistics (mean, STD, variance, etc.)
 - Indexing: nearest index, starting index, Bubble Sort
 - I/O: read, write files
@@ -146,10 +146,12 @@ numerical_methods/
 │   ├── hybrid.py
 │   └── open_methods.py
 ├── linear_systems/
+│   ├── linear_solver.py
 │   ├── direct_solvers.py
 │   └── iterative_solvers.py
 ├── non_linear_systems/
-│   └── non_linear_system_iterative_solvers.py
+│   ├── newton_solver.py
+│   └── non_linear_problem.py
 ├── optimization/
 │   ├── constrained/
 │       └── equality_constraints.py
@@ -187,8 +189,7 @@ numerical_methods/
     ├── indexing.py             # Index finding, sort
     ├── io_utils.py             # Read/write files
     ├── matrix_operations.py    # Matrix algebra
-    ├── statistics.py           # Statistics quantities
-    └── vector_operations.py    # Vector operations
+    └── statistics.py           # Statistics quantities
 ```
 
 ## Educational Purpose

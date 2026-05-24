@@ -1,40 +1,42 @@
 
-from typing import Callable, List
+from typing import Callable
 import numpy as np
 import scipy
 
-def brent(f: Callable[[float], float], a0: float, b0: float, mode: str = 'min',
-    output: bool = False, eps: float = 1e-8, k_max: int = 1000) -> float:
-    """Returns the optimum of a function f(x) in an interval [a, b]
-    using Brent's hybrid method"""
+def brent(f: Callable[[float], float], a0: float, b0: float,
+    output: bool = False, tol: float = 1e-8, k_max: int = 1000) -> float:
+    """Returns the minimum of a function in an interval
+    using Brent's hybrid method.
 
-    # if mode == 'min':
-    #     g = f
-    # else:
-    #     g = lambda x: -f(x)
-    # x = scipy.optimize.brent(g, brack=(a0,b0), tol=eps) # unrestricted
-    # x = scipy.optimize.fminbound(g, x1=a0, x2=b0, xtol=eps)
-    # r = scipy.optimize.minimize_scalar(g, bounds=(a0,b0), method='bounded', options={'xatol': eps})
+    Args:
+        f: the function to optimize
+        a0: the lower limit of the interval
+        b0: the upper limit of the interval
+        output (optional): flag to print iteration info
+        tol (optional): threshold for convergence
+        k_max (optional): maximum iterations
+    Returns:
+        The point of the function minimum."""
+
+    # x = scipy.optimize.brent(f, brack=(a0,b0), tol=tol) # unrestricted
+    # x = scipy.optimize.fminbound(f, x1=a0, x2=b0, xtol=tol)
+    # r = scipy.optimize.minimize_scalar(f, bounds=(a0,b0), method='bounded', options={'xatol': tol})
     # x = r.x
     # return float(x)
 
-    a, b = min(a0,b0), max(a0,b0)
-    phi = (3.0 - (5.0)**0.5) / 2.0
-    if mode == 'min':
-        s = +1.0
-    else:
-        s = -1.0
+    a, b = min(a0, b0), max(a0, b0)
+    phi = (3.0 - (5.0)**0.5)/2.0
 
     # x: best point, w: second best, v: third best
     x = w = v = a + phi*(b - a)
-    fx = fw = fv = f(x)*s
+    fx = fw = fv = f(x)
 
     d = e = 0.0  # d: current step, e: step before last
 
     for k in range(1, k_max + 1):
 
         mid = (a + b)/2.0
-        tol = eps*abs(x) + eps/10.0  # Tolerance relative to x
+        tol = tol*abs(x) + tol/10.0  # Tolerance relative to x
 
         err = abs(x-mid)
         if abs(x - mid) <= (2.0*tol - (b - a)/2.0):
@@ -70,7 +72,7 @@ def brent(f: Callable[[float], float], a0: float, b0: float, mode: str = 'min',
             d = float(np.sign(d)*tol)
 
         u = x + d
-        fu = f(u)*s
+        fu = f(u)
         # # If u is too close to a or b
         # if (u - a) < 2*tol or (b - u) < 2*tol:
         #     if x < mid:
@@ -78,7 +80,7 @@ def brent(f: Callable[[float], float], a0: float, b0: float, mode: str = 'min',
         #     else:
         #         d = -tol
         #     u = x + d
-        #     fu = f(u)*s
+        #     fu = f(u)
 
         u_is_best = fu <= fx
         if u_is_best:
@@ -108,27 +110,3 @@ def brent(f: Callable[[float], float], a0: float, b0: float, mode: str = 'min',
                 v, fv = u, fu
 
     return x
-
-def multi_hybrid(f: Callable[[float], float], a: float, b: float,
-    n: int, method: str, mode: str = 'min', output: bool = False) -> List[float]:
-    """Returns a list of extremes of a function f(x) in an interval [a, b]
-    using a hybrid method across n intervals"""
-
-    if n <= 0:
-        raise ValueError('n <= 0 in multi-bracketing!')
-
-    extremes = []
-    dx = (b-a)/n
-    for i in range(n):
-
-        a_int = a + i*dx
-        b_int = a_int + dx
-
-        if method == 'brent':
-            x = brent(f, a_int, b_int, mode, output)
-        else:
-            raise ValueError('Invalid bracketing method!')
-
-        extremes.append(x)
-
-    return extremes

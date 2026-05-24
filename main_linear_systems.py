@@ -64,7 +64,7 @@ def main_linear_systems():
     print(jacobi.solve(A, b, output=True))
 
     print('\nSOR')
-    sor = iterative_solver.SORSolver(x0=None, k_max=100, tol=1e-8, w=1.5)
+    sor = iterative_solver.SORSolver(x0=None, k_max=100, tol=1e-8, w=1.0)
     print(sor.solve(A, b, output=True))
 
     print('\nSteepest Descent')

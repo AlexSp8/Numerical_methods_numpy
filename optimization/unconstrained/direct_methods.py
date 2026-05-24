@@ -1,18 +1,24 @@
 
 from typing import Callable
 import numpy as np
-import numpy.typing as npt
 
 from optimization.one_dimensional import hybrid
 from optimization.unconstrained.line_search import LineSearch
 
-def powell(f: Callable[[npt.NDarray[np.float64]], float],
-    x0: npt.NDarray[np.float64] = None,
-    d: npt.NDarray[np.float64] = None, mode: str = 'min',
-    eps: float = 1e-8, k_max = 1000) -> npt.NDarray[np.float64]:
-    """Returns the point x(x1, x2, ..., xn) where the extreme of a
-    multi-variable function, f, is found using Powell's method.
-    A starting guess point, x0, and the initial direction vectors, d, should be given."""
+def powell(f: Callable[[np.ndarray[tuple[int], np.dtype[np.float64]]], float],
+    x0: np.ndarray[tuple[int], np.dtype[np.float64]],
+    d: np.ndarray[tuple[int], np.dtype[np.float64]] = None,
+    tol: float = 1e-8, k_max = 100) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+    """Returns the point of minimum of a multi-variable function using Powell's method.
+
+    Args:
+        f: the function to be optimized
+        x0: starting guess
+        d (optional): starting direction vectors
+        tol (optional): threshold for convergence
+        k_max (optional): maximum iterations
+    Returns:
+        The point of minimum of f."""
 
     n = len(x0)
 
@@ -22,8 +28,6 @@ def powell(f: Callable[[npt.NDarray[np.float64]], float],
         d_vectors = d.copy()
     else:
         d_vectors = np.eye(n)
-
-    l_min, l_max = -1.0, 1.0
 
     line_search = LineSearch(f)
 
@@ -37,20 +41,22 @@ def powell(f: Callable[[npt.NDarray[np.float64]], float],
 
             line_search.update(x, d_vectors[i])
 
+            h_min, h_max = line_search.h_interval(k_max=10)
+
             # Find h_opt (step size along i direction)
-            h_opt = hybrid.brent(line_search.f_line, l_min, l_max, mode)
+            h_opt = hybrid.brent(line_search.f_line, h_min, h_max)
 
             x_old = x.copy()
 
             x = x + h_opt*d_vectors[i]
 
             # Track the direction in which f changes the most
-            diff = abs(f(x) - f(x_old))
+            diff = np.abs(f(x) - f(x_old))
             if diff > max_diff:
                 max_diff, max_diff_dir = diff, i
 
         f_x = f(x)
-        if abs( (f_x - f(x_start))/(f_x+eps) ) < eps:
+        if np.abs( (f_x - f(x_start))/(f_x+tol) ) < tol:
             # print('k =', k)
             break
 
@@ -59,6 +65,6 @@ def powell(f: Callable[[npt.NDarray[np.float64]], float],
         norm = np.linalg.norm(d_new)
         if norm > 1e-12:
             d_vectors = np.delete(d_vectors, max_diff_dir, axis=0)
-            d_vectors = np.vstack([d_vectors, d_new / norm])
+            d_vectors = np.vstack([d_vectors, d_new/norm])
 
     return x

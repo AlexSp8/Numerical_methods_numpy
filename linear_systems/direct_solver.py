@@ -1,6 +1,6 @@
 
 import numpy as np
-import numpy.typing as npt
+import scipy
 
 from utilities import matrix_operations
 from linear_systems.linear_solver import LinearSolver
@@ -16,13 +16,22 @@ class LUSolver(DirectSolver):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def solve(self, A: npt.NDArray[np.float64], b: npt.NDArray[np.float64]
-        ) -> npt.NDArray[np.float64]:
-        """Returns the solution vector, x, of a linear system of algebraic equations (Ax = b)
-        with LU decomposition. First, A = LU (decomposition, including partial pivoting).
-        Then, Ld = b (forward substitution). Finally, Ux = d (back substitution)."""
+    def solve(self, A: np.ndarray[tuple[int, int], np.dtype[np.float64]],
+        b: np.ndarray[tuple[int], np.dtype[np.float64]]
+        ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+        """Returns the solution vector of a linear system of algebraic equations
+        (Ax = b) with LU decomposition.
+        First, A = LU (decomposition, including partial pivoting) is performed.
+        Then, Ld = b (forward substitution). Finally, Ux = d (back substitution).
+
+        Args:
+            A: the matrix of the linear system
+            b: the right-hand side vector of the linear system
+        Returns:
+            The solution vector of the linear system, x."""
 
         # A_lu, rows_order = scipy.linalg.lu_factor(A)
+        # n = A.shape[0]
         # U, L = np.triu(A_lu), np.tril(A_lu,-1) + np.eye(n)
         # return scipy.linalg.lu_solve((A_lu, rows_order), b)
 
@@ -43,33 +52,50 @@ class GaussSolver(DirectSolver):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def solve(self, A: npt.NDArray[np.float64], b: npt.NDArray[np.float64]
-        ) -> npt.NDArray[np.float64]:
-        """Solves a linear system of algebraic equations with Gauss elimination.
-        Partial pivoting is performed during forward elimination."""
+    def solve(self, A: np.ndarray[tuple[int, int], np.dtype[np.float64]],
+        b: np.ndarray[tuple[int], np.dtype[np.float64]]
+        ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+        """Returns the solution vector of a linear system of algebraic equations
+        (Ax = b) with Gauss elimination.
 
-        A_aug, n_swaps = self.forward_elimination(A, b)
+        Args:
+            A: the matrix of the linear system
+            b: the right-hand side vector of the linear system
+        Returns:
+            The solution vector of the linear system, x.
+        """
+
+        A_aug = self.forward_elimination(A, b)
 
         n = A_aug.shape[0]
-
-        # print(matrix_operations.determinant_upper_diagonal(A_aug, n_swaps))
-        # print(matrix_operations.log_determinant_upper_diagonal(A_aug, n_swaps))
 
         b_up = A_aug[:,n]
 
         return matrix_operations.back_substitution(A_aug[:,:-1], b_up)
 
-    def forward_elimination(self, A: npt.NDArray[np.float64], b: npt.NDArray[np.float64]
-        ) -> npt.NDArray[np.float64]:
-        """Returns the augmented upper diagonal matrix that result from
-        forward elimination of unknowns of a square matrix A"""
+    def forward_elimination(self, A: np.ndarray[tuple[int, int], np.dtype[np.float64]],
+        b: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+        """Returns the augmented matrix that result from
+        forward elimination of a square matrix A.
+
+        Args:
+            A: the matrix of the linear system
+            b: the right-hand side vector of the linear system
+        Returns:
+            The augmented matrix that result after forward elimination."""
 
         n = A.shape[0]
+
         n_swaps = 0
+
         A_aug = np.column_stack((A,b))
+        # A_aug = np.zeros((n, n+1))
+        # A_aug[:n,:n] = A.copy()
+        # A_aug[:,n] = b.copy()
+
         for k in range(n):
 
-            i_max = matrix_operations.partial_pivot(A_aug, k)
+            i_max = matrix_operations.pivot_row(A_aug, k)
             if i_max != k:
                 A_aug[[k,i_max]] = A_aug[[i_max,k]]
                 n_swaps += 1
@@ -78,7 +104,10 @@ class GaussSolver(DirectSolver):
                 f = A_aug[i,k]/A_aug[k,k]
                 A_aug[i,k:] -= f*A_aug[k,k:]
 
-        return A_aug, n_swaps
+        # print(matrix_operations.determinant_upper_diagonal(A_aug, n_swaps))
+        # print(matrix_operations.log_determinant_upper_diagonal(A_aug, n_swaps))
+
+        return A_aug
 
 
 class CramerSolver(DirectSolver):
@@ -86,16 +115,26 @@ class CramerSolver(DirectSolver):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def solve(self, A: npt.NDArray[np.float64], b: npt.NDArray[np.float64]
-        ) -> npt.NDArray[np.float64]:
-        """Solves a linear system of algebraic equations with Cramer's rule"""
+    def solve(self, A: np.ndarray[tuple[int, int], np.dtype[np.float64]],
+        b: np.ndarray[tuple[int], np.dtype[np.float64]]
+        ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+        """Returns the solution vector of a linear system of algebraic equations
+        (Ax = b) with Cramer's rule.
+
+        Args:
+            A: the matrix of the linear system
+            b: the right-hand side vector of the linear system
+        Returns:
+            The solution vector of the linear system, x."""
 
         detA = np.linalg.det(A)
-        if np.isclose(detA, 0):
+        if abs(detA) < 1e-12:
             raise ValueError("Matrix is singular! Cannot perform Cramer's rule.")
 
         n = A.shape[0]
+
         x = np.zeros(n)
+
         for i in range(n):
             Ai = matrix_operations.replace_column(A, b, i)
             detAi = np.linalg.det(Ai)
@@ -104,12 +143,21 @@ class CramerSolver(DirectSolver):
         return x
 
 
-def thomas_tri_diagonal(l: npt.NDArray[np.float64], d: npt.NDArray[np.float64],
-    u: npt.NDArray[np.float64], b: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
-    """Returns the solution, x, to a system of linear algebraic equations,
-    Ax = b, using the Thomas algorithm for tri-diagonal matrices.
-    Matrix elements are stored in l (sub-diagonal), d (diagonal),
-    and u (upper-diagonal). """
+def thomas_tri_diagonal(l:np.ndarray[tuple[int], np.dtype[np.float64]],
+    d: np.ndarray[tuple[int], np.dtype[np.float64]],
+    u: np.ndarray[tuple[int], np.dtype[np.float64]],
+    b: np.ndarray[tuple[int], np.dtype[np.float64]]
+    ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+    """Returns the solution vector of a linear system of algebraic equations
+    (Ax = b) with the Thomas algorithm for tri-diagonal matrices.
+
+    Args:
+        l: the sub-diagonal elements of the matrix
+        d: the diagonal elements of the matrix
+        u: the upper-diagonal elements of the matrix
+        b: the right-hand side vector of the linear system
+    Returns:
+        The solution vector of the linear system, x."""
 
     # udl = np.array([
     #     np.insert(u, 0, 0),  # Upper: with 0 at the start
@@ -122,7 +170,9 @@ def thomas_tri_diagonal(l: npt.NDArray[np.float64], d: npt.NDArray[np.float64],
     n = len(d)
 
     d_lu = d.copy()
+
     b_lu = b.copy()
+
     for k in range(1,n):
         # Decomposition
         f = l[k-1]/d_lu[k-1]

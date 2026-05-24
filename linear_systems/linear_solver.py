@@ -1,7 +1,6 @@
 
 from abc import ABC, abstractmethod
 import numpy as np
-import numpy.typing as npt
 
 class LinearSolver(ABC):
 
@@ -13,6 +12,18 @@ class LinearSolver(ABC):
         pass
 
     @staticmethod
-    def get_residual(A: npt.NDArray[np.float64], b: npt.NDArray[np.float64],
-        x: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+    def get_residual(A: np.ndarray[tuple[int, int], np.dtype[np.float64]],
+        b: np.ndarray[tuple[int], np.dtype[np.float64]],
+        x: np.ndarray[tuple[int], np.dtype[np.float64]]
+        ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+        """Returns the residual vector of a linear system, r = b - Ax.
+
+        Args:
+            A: the matrix of the linear system
+            b: the right-hand side vector of the linear system
+            x: the solution vector approximation of the linear system
+
+        Returns:
+            The residual vector of the linear system."""
+
         return b - np.dot(A, x)

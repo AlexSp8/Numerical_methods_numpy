@@ -1,13 +1,21 @@
 
-from typing import Callable, List
+from typing import Callable
 import scipy
 
-from differentiation import forward_fd as ffd
-
 def fixed_point(f: Callable[[float], float], x0: float,
-    eps: float = 1e-8, k_max: int = 1000) -> float|None:
-    """Returns the root, f(x) = 0, of a function f(x)
-    around an initial guess, x0, using the fixed-point iteration method"""
+    tol: float = 1e-8, k_max: int = 1000) -> float | None:
+    """Returns the root of a function around an initial guess
+    using the fixed-point iteration method.
+
+    Args:
+        f: an algebraic function
+        x0: the initial guess
+        tol: the numerical threshold for convergence
+        k_max: the maximum number of iterations
+
+    Returns:
+        A root (float) if it exists, otherwise None
+    """
 
     x = x0
     for k in range(1, k_max+1):
@@ -22,16 +30,27 @@ def fixed_point(f: Callable[[float], float], x0: float,
 
         err = [abs(f_x), abs( (x-x_old)/(x+1e-12) )]
 
-        if all(e < eps for e in err):
+        if all(e < tol for e in err):
             print(f'k = {k}. Errors (f, rel): {[f"{e:.4e}" for e in err]}')
             return x
 
     return None
 
 def secant(f: Callable[[float], float], x0: float, x1: float,
-    eps: float = 1e-8, k_max: int = 1000) -> float|None:
-    """Returns the root, f(x) = 0, of a function f(x)
-    around an initial guess, x0, using the Secant method"""
+    tol: float = 1e-8, k_max: int = 1000) -> float | None:
+    """Returns the root of a function around two initial guesses
+    using the Secant method.
+
+    Args:
+        f: an algebraic function
+        x0: the first initial guess
+        x1: the second initial guess
+        tol: the numerical threshold for convergence
+        k_max: the maximum number of iterations
+
+    Returns:
+        A root (float) if it exists, otherwise None
+    """
 
     # return scipy.optimize.newton(f, x0=x0, x1=x1)
 
@@ -46,7 +65,7 @@ def secant(f: Callable[[float], float], x0: float, x1: float,
 
         f2 = f(x2)
         err = [abs(f2), abs( (x2-x1)/(x2+1e-12) )]
-        if all(e < eps for e in err):
+        if all(e < tol for e in err):
             print(f'k = {k}. Errors (f, rel): {[f"{e:.4e}" for e in err]}')
             return x2
 
@@ -55,9 +74,21 @@ def secant(f: Callable[[float], float], x0: float, x1: float,
     return None
 
 def iqi(f: Callable[[float], float], x0: float, x1: float, x2: float,
-    eps: float = 1e-8, k_max: int = 1000) -> float|None:
-    """Returns the root, f(x) = 0, of a function f(x)
-    around an initial guess, x0, using the IQI method"""
+    tol: float = 1e-8, k_max: int = 1000) -> float | None:
+    """Returns the root of a function around three initial points
+    using the Inverse Quadratic Interpolation (IQI) method.
+
+    Args:
+        f: an algebraic function
+        x0: the first initial point
+        x1: the second initial point
+        x2: the third initial point
+        tol: the numerical threshold for convergence
+        k_max: the maximum number of iterations
+
+    Returns:
+        A root (float) if it exists, otherwise None
+    """
 
     f0, f1, f2 = f(x0), f(x1), f(x2)
 
@@ -75,7 +106,7 @@ def iqi(f: Callable[[float], float], x0: float, x1: float, x2: float,
         f3 = f(x3)
 
         err = [abs(f3), abs( (x3-x2)/(x3+1e-12) )]
-        if all(e < eps for e in err):
+        if all(e < tol for e in err):
             print(f'k = {k}. Errors (f, rel): {[f"{e:.4e}" for e in err]}')
             return x3
 
@@ -86,14 +117,24 @@ def iqi(f: Callable[[float], float], x0: float, x1: float, x2: float,
     return None
 
 def newton_raphson(f: Callable[[float], float], x0: float,
-    eps: float = 1e-8, k_max: int = 1000, r: float = 1.0) -> float|None:
-    """Returns the root, f(x) = 0, of a function f(x)
-    around an initial guess, x0, using the Newton-Raphson method"""
+    df: Callable[[Callable[[float], float], float, float, float], float],
+    tol: float = 1e-8, k_max: int = 1000, r: float = 1.0) -> float | None:
+    """Returns the root of a function around an initial guess
+    using the Newton Raphson method.
+
+    Args:
+        f: an algebraic function
+        df: the derivative of the function calculated with finite differences
+        x0: the initial guess
+        tol: the numerical threshold for convergence
+        k_max: the maximum number of iterations
+
+    Returns:
+        A root (float) if it exists, otherwise None
+    """
 
     # return scipy.optimize.newton(f, x0=x0,
-    #     fprime=lambda x: ffd.df_h(f,x))
-    # return scipy.optimize.newton(f, x0=x0, fprime=lambda x: ffd.df_h(f,x),
-    #     fprime2=lambda x: ffd.d2f_h(f,x)) #Halley
+    #     fprime=lambda x: df(f,x))
 
     x = x0
     for k in range(1, k_max+1):
@@ -101,24 +142,44 @@ def newton_raphson(f: Callable[[float], float], x0: float,
         x_old = x
 
         f_x = f(x)
-        df = ffd.df_h(f, x)
+        df_x = df(f, x)
 
-        x = x_old - r*f_x/(df+1e-12)
+        try:
+            x = x_old - r*f_x/df_x
+        except ZeroDivisionError:
+            return None
 
         # print(f"k: {k}, x: {x}, f(x): {f_x}")
 
         err = [abs(f_x), abs( (x-x_old)/(x+1e-12) )]
 
-        if all(e < eps for e in err):
+        if all(e < tol for e in err):
             print(f'k = {k}. Errors (f, rel): {[f"{e:.4e}" for e in err]}')
             return x
 
     return None
 
 def ralston_rabinowitz(f: Callable[[float], float], x0: float,
-    eps: float = 1e-8, k_max: int = 1000, r: float = 1.0) -> float|None:
-    """Returns the root, f(x) = 0, of a function f(x)
-    around an initial guess, x0, using the Ralston-Rabinowitz method"""
+    df: Callable[[Callable[[float], float], float, float, float], float],
+    d2f: Callable[[Callable[[float], float], float, float, float], float],
+    tol: float = 1e-8, k_max: int = 1000, r: float = 1.0) -> float|None:
+    """Returns the root of a function around an initial guess
+    using the Ralston Rabinowitz method.
+
+    Args:
+        f: an algebraic function
+        df: the derivative of the function calculated with finite differences
+        d2f: the second derivative of the function calculated with finite differences
+        x0: the initial guess
+        tol: the numerical threshold for convergence
+        k_max: the maximum number of iterations
+
+    Returns:
+        A root (float) if it exists, otherwise None
+    """
+
+    # return scipy.optimize.newton(f, x0=x0, fprime=lambda x: df(f,x),
+    #     fprime2=lambda x: d2f(f,x)) # Halley
 
     x = x0
     for k in range(1, k_max+1):
@@ -127,50 +188,21 @@ def ralston_rabinowitz(f: Callable[[float], float], x0: float,
 
         f_x = f(x)
 
-        df_x = ffd.df_h(f, x)
+        df_x = df(f, x)
 
-        d2f_x = ffd.d2f_h(f, x)
+        d2f_x = d2f(f, x)
 
-        x = x_old - r*f_x*df_x/( (df_x**2)-f_x*d2f_x+eps )
+        try:
+            x = x_old - r*f_x*df_x/( (df_x**2)-f_x*d2f_x )
+        except ZeroDivisionError:
+            return None
 
         # print(f"k: {k}, x: {x}, f(x): {f_x}")
 
         err = [abs(f_x), abs( (x-x_old)/(x+1e-12) )]
 
-        if all(e < eps for e in err):
+        if all(e < tol for e in err):
             print(f'k = {k}. Errors (f, rel): {[f"{e:.4e}" for e in err]}')
             return x
 
     return None
-
-def multi_open(f: Callable[[float], float],
-    a: float, b: float, n: int, method: str) -> List[float|None]:
-    """Returns a list of roots of a function f(x) in an interval [a, b]
-    using an open method across n intervals"""
-
-    if n <= 0:
-        raise ValueError('n <= 0 in multi-bracketing!')
-
-    roots = []
-    dx = (b-a)/n
-    for i in range(n):
-
-        x0 = a + i*dx
-
-        if method == 'fixed_point':
-            xr = fixed_point(f, x0)
-        elif method == 'secant':
-            x1 = x0+dx
-            xr = secant(f, x0, x1)
-        elif method == 'iqi':
-            x1, x2 = x0+dx/2, x0+dx
-            xr = iqi(f, x0, x1, x2)
-        elif method == 'newton_raphson':
-            xr = newton_raphson(f, x0)
-        elif method == 'ralston_rabinowitz':
-            xr = ralston_rabinowitz(f, x0)
-        else:
-            raise ValueError('Invalid open method!')
-        if xr is not None:
-            roots.append(float(xr))
-    return roots

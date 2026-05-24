@@ -1,7 +1,5 @@
 
-from typing import Callable, Tuple
 import numpy as np
-import numpy.typing as npt
 import scipy
 
 # from utilities import matrix_operations
@@ -10,7 +8,8 @@ from linear_systems.linear_solver import LinearSolver
 
 class NewtonSolver:
 
-    def __init__(self, ls_solver: LinearSolver, u0: npt.NDArray[np.float64],
+    def __init__(self, ls_solver: LinearSolver,
+        u0: np.ndarray[tuple[int], np.dtype[np.float64]],
         k_max: int = 1000, tol: float = 1e-8, r: float = 1.0):
 
         self.ls_solver = ls_solver
@@ -19,41 +18,50 @@ class NewtonSolver:
         self.tol = tol
         self.r = r
 
-    def get_norms(self, du: npt.NDArray[np.float64], res: npt.NDArray[np.float64]
-        ) -> Tuple[float, float]:
-        """Returns the correction and residual norms."""
+    def get_norms(self, du: np.ndarray[tuple[int], np.dtype[np.float64]],
+        res: np.ndarray[tuple[int], np.dtype[np.float64]]
+        ) -> tuple[float, float]:
+        """Returns the norms of the correction and residual vectors.
+
+        Args:
+            du: the correction vector
+            res: the residual vector
+        Returns:
+            The correction and residual norms."""
+
         cor_norm = np.linalg.norm(du)
         res_norm = np.linalg.norm(res)
+
         return cor_norm, res_norm
 
-    def is_converged(self, cor_norm: float, res_norm: float, mode: str = 'and') -> bool:
-        """Checks the correction and residual norm convergence criteria."""
-        if mode == 'and':
-            return (res_norm < self.tol) and (cor_norm < self.tol)
-        else:
-            return (res_norm < self.tol) or (cor_norm < self.tol)
-
     def solve(self, problem: NonlinearProblem,
-        output: bool = False, ls_solver: LinearSolver = None) -> npt.NDArray[np.float64]:
-        """Returns the solution of a non-linear system of algebraic equations, F,
-        around an initial guess, u0, using the Newton-Raphson method"""
+        output: bool = False, ls_solver: LinearSolver = None
+        ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+        """Returns the solution of a non-linear system of algebraic equations
+        around an initial guess using the Newton-Raphson method.
+
+        Args:
+            problem: the non-linear problem to be solved (object containing the residual method)
+            output (optional): flag for iteration info output
+            ls_solver (optional): a linear solver object to solve the linearized system
+        Returns:
+            The solution vector of the non-linear system, u."""
 
         # u = scipy.optimize.fsolve(problem.res, self.u0)
         # return u
 
-        solver = ls_solver or self.ls_solver
+        if ls_solver is not None:
+            solver = ls_solver
+        else:
+            solver = self.ls_solver
 
         u = self.u0.copy()
+
         for k in range(1, self.k_max+1):
 
             res = problem.f_res(u)
 
-            if hasattr(problem, 'jac'):
-                jac = problem.jac(u)
-            else:
-                jac = self.jacobian(res, problem.f_res, u)
-
-            # print(matrix_operations.condition_number(jac))
+            jac = problem.jacobian(u, res)
 
             du = solver.solve(jac, -res)
             # solver.x0 = du
@@ -61,40 +69,16 @@ class NewtonSolver:
             cor_norm, res_norm = self.get_norms(du, res)
             if output:
                 print(f'k = {k}, Res Norm: {res_norm:.4e}, Cor Norm: {cor_norm:.4e}')
+                # print(matrix_operations.condition_number(jac))
 
-            if self.is_converged(cor_norm, res_norm, 'and'):
-                break
+            if (res_norm < self.tol) and (cor_norm < self.tol):
+                return u
 
             u = u + self.r*du
 
+        print(f"Warning: Maximum iterations ({self.k_max}) reached without converging.")
+
         return u
-
-    @staticmethod
-    def jacobian(res: npt.NDArray[np.float64],
-        f_res: Callable[[npt.NDArray[np.float64]], npt.NDArray[np.float64]],
-        u: npt.NDArray[np.float64], h: float = 1e-8) -> npt.NDArray[np.float64]:
-        """Returns the Jacobian of a system of non-linear algebraic equations
-        around the values, u, of the unknowns."""
-
-        n, m = len(u), len(res)
-
-        jac = np.zeros((m,n))
-        for j in range(n):
-
-            u_val = u[j]
-            u[j] += h
-            res_f = f_res(u)
-            u[j] = u_val
-
-            # u_val = u[j]
-            # u[j] -= h
-            # res_b = f_res(u)
-            # u[j] = u_val
-
-            jac[:,j] = (res_f-res)/h
-            # jac[:,j] = (res_f-res_b)/(2*h)
-
-        return jac
 
 class LevenbergMarquardtSolver(NewtonSolver):
 
@@ -105,49 +89,62 @@ class LevenbergMarquardtSolver(NewtonSolver):
         self.scale = scale
 
     def solve(self, problem: NonlinearProblem,
-        output: bool = False, ls_solver: LinearSolver = None) -> npt.NDArray[np.float64]:
-        """Returns the solution of a non-linear system of algebraic equations, F,
-        around an initial guess, u0, using the Levenberg-Marquardt method"""
+        output: bool = False, ls_solver: LinearSolver = None
+        ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+        """Returns the solution of a non-linear system of algebraic equations
+        around an initial guess using the Levenberg-Marquardt method.
+
+        Args:
+            problem: the non-linear problem to be solved (object containing the residual method)
+            output (optional): flag for iteration info output
+            ls_solver (optional): a linear solver object to solve the linearized system
+        Returns:
+            The solution vector of the non-linear system, u."""
 
         # u = scipy.optimize.fsolve(problem.res, self.u0)
         # return u
 
-        solver = ls_solver or self.ls_solver
+        if ls_solver is not None:
+            solver = ls_solver
+        else:
+            solver = self.ls_solver
 
         u = self.u0.copy()
+
         res = problem.f_res(u)
+
         ssr = np.sum(res**2)
 
-        n = self.u0.shape[0]
-        m = res.shape[0]
+        n, m = self.u0.shape[0], res.shape[0]
 
-        l = self.l0
-        s = self.scale
+        damp, s = self.l0, self.scale
 
         for k in range(1, self.k_max+1):
 
-            if hasattr(problem, 'jac'):
-                jac = problem.jac(u)
-            else:
-                jac = self.jacobian(res, problem.f_res, u)
+            jac = problem.jacobian(u, res)
 
             # print(matrix_operations.condition_number(jac))
 
-            if m != n:
-                jt = jac.T
-                j_mat = np.matmul(jt, jac)
-                b = -np.matmul(jt, res)
-            else:
-                j_mat = jac
-                b = -res
+            # if m != n:
+            jt = jac.T
+            j_mat = np.matmul(jt, jac)
+            b = -np.matmul(jt, res)
+            # else:
+            #     j_mat = jac
+            #     b = -res
+
+            diag_j = np.diag(np.diag(j_mat))
+
+            if np.any(np.diag(diag_j) == 0):
+                diag_j = np.eye(n)
 
             for k2 in range(1, 21):
 
                 try:
-                    jtj_damped = j_mat + l*np.eye(n)
+                    jtj_damped = j_mat + damp*diag_j # np.eye(n)
                     du = solver.solve(jtj_damped, b)
                 except:
-                    l *= s
+                    damp *= s
                     continue
 
                 # solver.x0 = du
@@ -158,22 +155,23 @@ class LevenbergMarquardtSolver(NewtonSolver):
 
                 ssr_trial = np.sum(res_trial**2)
 
-                is_better = (ssr_trial < ssr)
-                if is_better:
+                if ssr_trial < ssr:
                     u, ssr, res = u_trial, ssr_trial ,res_trial
-                    l /= s  # Move towards Newton
+                    damp /= s  # Move towards Newton
                     break
                 else:
-                    l *= s  # Move towards Steepest Descent
+                    damp *= s  # Move towards Steepest Descent
 
-                if l > 1e12:
+                if damp > 1e12:
                     break
 
             cor_norm, res_norm = self.get_norms(du, res)
             if output:
-                print(f'k = {k} (k2: {k2}), Res Norm: {res_norm:.4e}, Cor Norm: {cor_norm:.4e}')
+                print(f'k = {k} (Inner k2: {k2}), Res Norm: {res_norm:.4e}, Cor Norm: {cor_norm:.4e}')
 
-            if self.is_converged(cor_norm, res_norm, 'or'):
-                break
+            if (res_norm < self.tol) and (cor_norm < self.tol):
+                return u
+
+        print(f"Warning: Maximum iterations ({self.k_max}) reached without converging.")
 
         return u
