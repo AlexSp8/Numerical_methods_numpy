@@ -250,8 +250,8 @@ def back_substitution(A: np.ndarray[tuple[int, int], np.dtype[np.float64]],
 
     return x
 
-def lu_decomposition(A: np.ndarray[tuple[int, int], np.dtype[np.float64]],
-    ) -> tuple[np.ndarray[tuple[int, int], np.dtype[np.float64]], np.ndarray[tuple[int], np.dtype[np.intp]]]:
+def lu_decomposition(A: np.ndarray[tuple[int, int]],
+    ) -> tuple[np.ndarray[tuple[int, int]], np.ndarray[tuple[int]]]:
     """Returns the LU decomposition of a matrix, A and the order of rows after partial pivot.
     L is the lower and U is the upper diagonal part of the new matrix.
     The new order of rows can be used for reordering the right-hand side vector later.
@@ -284,8 +284,7 @@ def lu_decomposition(A: np.ndarray[tuple[int, int], np.dtype[np.float64]],
 
     return A_lu, rows_order
 
-def tri_diagonal(A: np.ndarray[tuple[int, int], np.dtype[np.float64]]
-    ) -> tuple[np.ndarray[tuple[int], np.dtype[np.float64]]]:
+def tri_diagonal(A: np.ndarray[tuple[int, int]]) -> tuple[np.ndarray[tuple[int]]]:
     """Returns the tri-diagonal part of a matrix.
 
     Args:
@@ -312,8 +311,8 @@ def tri_diagonal(A: np.ndarray[tuple[int, int], np.dtype[np.float64]]
 
     return l, d, u
 
-def cholesky_decomposition(A: np.ndarray[tuple[int, int], np.dtype[np.float64]]
-    ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
+def cholesky_decomposition(A: np.ndarray[tuple[int, int]]
+    ) -> np.ndarray[tuple[int, int]]:
     """Returns the lower diagonal matrix, L, from the Cholesky
     decomposition of a symmetric, positive-definite matrix, A.
 
@@ -342,10 +341,15 @@ def cholesky_decomposition(A: np.ndarray[tuple[int, int], np.dtype[np.float64]]
 
     return L
 
-def qr_decomposition(A: npt.NDArray[np.float64]
-    ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+def qr_decomposition(A: np.ndarray[tuple[int, int]]
+    ) -> tuple[np.ndarray[tuple[int, int]], np.ndarray[tuple[int, int]]]:
     """Returns the QR decomposition of a matrix A using Gram-Schmidt process.
-    Q is the orthogonal rotation matrix and R is the upper-triangular."""
+    Q is the orthogonal rotation matrix and R is the upper-triangular.
+
+    Args:
+        A: the matrix on which QR decomposition is performed
+    Returns:
+        A tuple of the Q and R matrices."""
 
     n = A.shape[1]
     Q = np.zeros_like(A)
@@ -354,9 +358,10 @@ def qr_decomposition(A: npt.NDArray[np.float64]
     for j in range(n):
         v = A[:,j]
         for i in range(j):
-            R[i][j] = np.dot(Q[:,i], A[:,j])
+            R[i,j] = np.dot(Q[:,i], A[:,j])
             v = v - R[i,j]*Q[:,i]
 
-        R[j][j] = np.linalg.norm(v)
+        R[j,j] = np.linalg.norm(v)
         Q[:,j] = v/R[j,j]
+
     return Q, R

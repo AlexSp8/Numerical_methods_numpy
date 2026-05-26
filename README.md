@@ -42,17 +42,17 @@ This library provides implementations of fundamental numerical algorithms:
 
 - **Fourier Transform**: Discrete Fourier Transform (DFT), Fast Fourier Transform (FFT) Sande-Tukey
 
-### Integration
+### Integration (`integration`)
 - **Function Integration**: Trapezoidal, Simpson 1/3, Simpson 3/8, Mixed Simpson, Romberg, Gauss-Legendre (1D, 2D, multi-dimensional, points-weights coefficients evaluation)
 - **Data Integration**: Trapezoidal, Simpson 1/3, Simpson Mixed (1D, 2D, multi-dimensional)
 
-### Differentiation
+### Differentiation (`differentiation`)
 - **Finite Differences**: Forward ($O(h), O(h^2)$), Backward ($O(h), O(h^2)$), Central ($O(h^2), O(h^4)$) up to fourth order.
 - **Partial Derivatives**: Grad, Hessian.
 - **Function Differentiation**: Richardson Extrapolation
 - **Data Differentiation**: Divided Differences
 
-### ODEs
+### ODEs (`ode`)
 #### Explicit Methods
 - **RK1**: Explicit Euler
 - **RK2**: General method, Heun's method, Midpoint

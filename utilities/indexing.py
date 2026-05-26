@@ -1,10 +1,15 @@
 
-from typing import Tuple
-
 import numpy as np
 
-def nearest_index(xp: float, x: np.NDArray,) -> int:
-    """Returns the index of the value in sorted xi closest to xp."""
+def nearest_index(xp: float,
+    x: np.ndarray[tuple[int], np.dtype[np.float64]]) -> int:
+    """Returns the index of the value in sorted x closest to xp.
+
+    Args:
+        xp: the point of interest
+        x: the sorted array to search in
+    Returns:
+        The index of the sorted x such that the value of x is closest to xp."""
 
     idx = np.searchsorted(x, xp)
 
@@ -19,18 +24,37 @@ def nearest_index(xp: float, x: np.NDArray,) -> int:
     else:
         return idx
 
-def starting_index(xp: float, x: np.NDArray, m: int = 1) -> int:
+def starting_index(xp: float,
+    x: np.ndarray[tuple[int], np.dtype[np.float64]], m: int = 1) -> int:
     """Returns the starting index of the sub-interval of
-    size m+1 of xi that is centered around xp."""
+    size m+1 of xi that is centered around xp.
 
-    n = x.shape[0]
+    Args:
+        xp: the point of interest
+        x: the list of points
+        m: the number of points to consider for each sub-interval
+    Returns:
+        The index of the sub-interval that is centered around xp."""
+
     idx = nearest_index(xp, x)
 
     i_start = idx - (m//2)
 
+    n = x.shape[0]
+
     return max(0, min(i_start, n - (m + 1)))
 
-def bubble_sort(x: np.NDArray, y: np.NDArray) -> Tuple[np.NDArray]:
+def bubble_sort(x: np.ndarray[tuple[int], np.dtype[np.float64]],
+    y: np.ndarray[tuple[int], np.dtype[np.float64]]
+    ) -> tuple[np.ndarray[tuple[int], np.dtype[np.float64]], np.ndarray[tuple[int], np.dtype[np.float64]]]:
+    """Returns the sorted versions of arrays x, y by performing
+    bubble sort with respect to the array x.
+
+    Args:
+        x: the array on which the sorting is based
+        y: the corresponding independent array
+    Returns:
+        The sorted versions of arrays x, y."""
 
     n = len(x)
     x_sorted, y_sorted = x.copy(), y.copy()

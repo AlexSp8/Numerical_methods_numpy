@@ -8,8 +8,7 @@ from linear_systems.linear_solver import LinearSolver
 
 class NewtonSolver:
 
-    def __init__(self, ls_solver: LinearSolver,
-        u0: np.ndarray[tuple[int], np.dtype[np.float64]],
+    def __init__(self, ls_solver: LinearSolver, u0: np.ndarray[tuple[int]],
         k_max: int = 1000, tol: float = 1e-8, r: float = 1.0):
 
         self.ls_solver = ls_solver
@@ -18,8 +17,11 @@ class NewtonSolver:
         self.tol = tol
         self.r = r
 
-    def get_norms(self, du: np.ndarray[tuple[int], np.dtype[np.float64]],
-        res: np.ndarray[tuple[int], np.dtype[np.float64]]
+    def update_guess(self, u0: np.ndarray[tuple[int]]):
+
+        self.u0 = u0
+
+    def get_norms(self, du: np.ndarray[tuple[int]], res: np.ndarray[tuple[int]]
         ) -> tuple[float, float]:
         """Returns the norms of the correction and residual vectors.
 
@@ -34,9 +36,8 @@ class NewtonSolver:
 
         return cor_norm, res_norm
 
-    def solve(self, problem: NonlinearProblem,
-        output: bool = False, ls_solver: LinearSolver = None
-        ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+    def solve(self, problem: NonlinearProblem, output: bool = False,
+        ls_solver: LinearSolver = None) -> np.ndarray[tuple[int]]:
         """Returns the solution of a non-linear system of algebraic equations
         around an initial guess using the Newton-Raphson method.
 
@@ -90,7 +91,7 @@ class LevenbergMarquardtSolver(NewtonSolver):
 
     def solve(self, problem: NonlinearProblem,
         output: bool = False, ls_solver: LinearSolver = None
-        ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+        ) -> np.ndarray[tuple[int]]:
         """Returns the solution of a non-linear system of algebraic equations
         around an initial guess using the Levenberg-Marquardt method.
 
@@ -169,7 +170,7 @@ class LevenbergMarquardtSolver(NewtonSolver):
             if output:
                 print(f'k = {k} (Inner k2: {k2}), Res Norm: {res_norm:.4e}, Cor Norm: {cor_norm:.4e}')
 
-            if (res_norm < self.tol) and (cor_norm < self.tol):
+            if (res_norm < self.tol) or (cor_norm < self.tol):
                 return u
 
         print(f"Warning: Maximum iterations ({self.k_max}) reached without converging.")

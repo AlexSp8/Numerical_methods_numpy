@@ -5,9 +5,17 @@ import numpy.typing as npt
 from utilities import indexing
 from linear_systems import direct_solver
 
-def vandermonde(xi: npt.NDArray, yi: npt.NDArray) -> npt.NDArray:
+def vandermonde(xi: np.ndarray[tuple[int], np.dtype[np.float64]],
+    yi: np.ndarray[tuple[int], np.dtype[np.float64]]
+    ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
     """Returns the coefficients of the Vandermonde polynomial
-    of order n-1, given n data points."""
+    of order n-1, given n data points.
+
+    Args:
+        xi: the independent variable data
+        yi: the dependent variable data
+    Returns:
+        The coefficients of the Vandermonde polynomial."""
 
     n = xi.shape[0]
 
@@ -19,32 +27,42 @@ def vandermonde(xi: npt.NDArray, yi: npt.NDArray) -> npt.NDArray:
     A = np.zeros((n,n))
     for i in range(n):
         for j in range(n):
-            A[i][j] = xi[i]**j
+            A[i,j] = xi[i]**j
 
     lu = direct_solver.LUSolver()
-    return lu.solve(A,yi)
 
-def newton_gregory_polynomials(xp: npt.NDArray, xi: npt.NDArray,
-    yi: npt.NDArray) -> npt.NDArray:
-    """Returns the interpolation value at a list of points, xp, for every
-    Newton-Gregory polynomial of order 1 to n-1, given n data points."""
+    return lu.solve(A, yi)
+
+def newton_gregory_polynomials(xp: np.ndarray[tuple[int], np.dtype[np.float64]],
+    xi: np.ndarray[tuple[int], np.dtype[np.float64]],
+    yi: np.ndarray[tuple[int], np.dtype[np.float64]]
+    ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
+    """Returns the interpolation value at a list of points for every
+    Newton-Gregory polynomial of order 1 to n-1, given n data points.
+
+    Args:
+        xp: the list of points where interpolation is done
+        xi: the independent variable data
+        yi: the dependent variable data
+    Returns:
+        The interpolation values of every order polynomial at every point (n x mp)."""
 
     n = yi.shape[0]
-    npts = xp.shape[0]
+    mp = xp.shape[0]
 
     fd = np.zeros((n,n))
     # 0th order derivatives at data points (xi,yi)
     fd[:,0] = yi[:]
 
     # derivatives of order 1 to n-1
-    for j in range(1,n):
+    for j in range(1, n):
         fd[:n-j,j] = (fd[1:n-j+1,j-1] - fd[:n-j,j-1])/( xi[j:] - xi[:n-j] )
 
-    y_int = np.zeros((n,npts))
+    y_int = np.zeros((n,mp))
     y_int[0,:] = fd[0,0]
 
-    x_term = np.ones(npts)
-    for i in range(1,n):
+    x_term = np.ones(mp)
+    for i in range(1, n):
         x_term *= (xp - xi[i-1])
         y_int[i,:] = y_int[i-1,:] + fd[0,i]*x_term
         # err = y_int[i,:] - y_int[i-1,:]
@@ -52,22 +70,33 @@ def newton_gregory_polynomials(xp: npt.NDArray, xi: npt.NDArray,
 
     return y_int
 
-def lagrange_polynomial(xp: npt.NDArray, xi: npt.NDArray,
-    yi: npt.NDArray, m: int = 1) -> npt.NDArray:
-    """Returns the interpolation value at a list of points, xp, using
-    Lagrange polynomials of given order m (default 1), given n data points."""
+def lagrange_polynomial(xp: np.ndarray[tuple[int], np.dtype[np.float64]],
+    xi: np.ndarray[tuple[int], np.dtype[np.float64]],
+    yi: np.ndarray[tuple[int], np.dtype[np.float64]],
+    m: int = 1) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+    """Returns the interpolation value at a list of points using
+    Lagrange polynomials of given order m, given n data points.
 
-    npts = xp.shape[0]
+    Args:
+        xp: the list of points where interpolation is done
+        xi: the independent variable data
+        yi: the dependent variable data
+        m: the order of the Lagrange polynomial
+    Returns:
+        The interpolation values at every point."""
+
+    mp = xp.shape[0]
 
     n = len(xi)
     if n < m + 1:
         m = n - 1
 
-    y_int = np.zeros(npts)
-    for k in range(npts):
+    y_int = np.zeros(mp)
+    for k in range(mp):
+
         i_start = indexing.starting_index(xp[k], xi, m)
 
-        xi_p, yi_p = xi[i_start : i_start+m+1], yi[i_start : i_start+m+1]
+        xi_p, yi_p = xi[i_start:i_start+m+1], yi[i_start:i_start+m+1]
 
         L = np.ones(m+1)
         for i in range(m+1):
@@ -90,10 +119,19 @@ def find_spline_interval(xp: float, xi: npt.NDArray) -> int:
 
     return np.searchsorted(xi, xp) - 1
 
-def linear_splines(xp: npt.NDArray, xi: npt.NDArray,
-    yi: npt.NDArray) -> npt.NDArray:
-    """Returns the interpolation value at a list of points, xp, using
-    linear splines, given n data points."""
+def linear_splines(xp: np.ndarray[tuple[int], np.dtype[np.float64]],
+    xi: np.ndarray[tuple[int], np.dtype[np.float64]],
+    yi: np.ndarray[tuple[int], np.dtype[np.float64]],
+    ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+    """Returns the interpolation value at a list of points using
+    linear splines given n data points.
+
+    Args:
+        xp: the list of points where interpolation is done
+        xi: the independent variable data
+        yi: the dependent variable data
+    Returns:
+        The interpolation values at every point."""
 
     # npts = xp.shape[0]
 
@@ -117,11 +155,22 @@ def linear_splines(xp: npt.NDArray, xi: npt.NDArray,
 
     return y_int
 
-def quadratic_splines(xp: npt.NDArray, xi: npt.NDArray,
-    yi: npt.NDArray, bc: str = 'linear', v: float = 0.0) -> npt.NDArray:
-    """Returns the interpolation value at a list of points, xp, using
-    quadratic splines, given n data points. A boundary condition
-    for one endpoint can also be given (default is linear at the first point)"""
+def quadratic_splines(xp: np.ndarray[tuple[int], np.dtype[np.float64]],
+    xi: np.ndarray[tuple[int], np.dtype[np.float64]],
+    yi: np.ndarray[tuple[int], np.dtype[np.float64]],
+    bc: str = 'linear', v: float = 0.0) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+    """Returns the interpolation value at a list of points using
+    quadratic splines given n data points A boundary condition
+    for one endpoint can also be given.
+
+    Args:
+        xp: the list of points where interpolation is done
+        xi: the independent variable data
+        yi: the dependent variable data
+        bc (optional): type of boundary condition for the first point
+        v (optional): value of clamped boundary condition
+    Returns:
+        The interpolation values at every point."""
 
     n = len(xi)
     n_int = n-1
@@ -160,11 +209,22 @@ def quadratic_splines(xp: npt.NDArray, xi: npt.NDArray,
 
     return y_int
 
-def cubic_splines(xp: npt.NDArray, xi: npt.NDArray,
-    yi: npt.NDArray, bc: str = 'natural', v: float = 0.0) -> npt.NDArray:
-    """Returns the interpolation value at a list of points, xp, using
-    cubic splines, given n data points. A boundary condition
-    can also be given (default is natural at the endpoints)"""
+def cubic_splines(xp: np.ndarray[tuple[int], np.dtype[np.float64]],
+    xi: np.ndarray[tuple[int], np.dtype[np.float64]],
+    yi: np.ndarray[tuple[int], np.dtype[np.float64]],
+    bc: str = 'natural', v: float = 0.0) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+    """Returns the interpolation value at a list of points using
+    cubic splines given n data points A boundary condition
+    for one endpoint can also be given.
+
+    Args:
+        xp: the list of points where interpolation is done
+        xi: the independent variable data
+        yi: the dependent variable data
+        bc (optional): type of boundary condition for the first point
+        v (optional): value of clamped boundary condition
+    Returns:
+        The interpolation values at every point."""
 
     n = len(xi)
     n_int = n-1

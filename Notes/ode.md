@@ -6,9 +6,11 @@ $$\frac{dy}{dx} = f(x, y)$$
 
 with initial condition $y[x_0]=y_0$, we approximate the solution in general as:
 
-$$y_{i+1} = y_i + \phi(x_i, y_i, h)h$$
+$$y_{i+1} = y_i + \phi(x, y, h)h$$
 
-We call $\phi(x_i, y_i, h)$ the increment function.\
+We call $\phi(x, y, h)$ the increment function.
+$x$ and $y$ can be the values at the previous step, i.e. $x_i$, $y_i$ (explicit methods) or at the current step, i.e. $x_{i+1}$, $y_{i+1}$ (implicit methods).
+
 We can generalize to a system of $n$ ODEs:
 
 $$ \frac{dy_1}{dx} = f_1(x, y_1, y_2, ..., y_n) $$
@@ -27,7 +29,8 @@ $$y_n[x_0]=y_{n,0}$$
 Explicit methods solve for $y_{i+1}$ using information from previous steps only.
 
 ### Runge-Kutta (RK) Methods
-The increment function is for $s$ stages per step:
+We evaluate the increment function in stages.
+The increment function for $s$ stages per step is:
 
 $$ \phi(x_i, y_i, h) = b_1k_1+b_2k_2+...+b_sk_s$$
 
@@ -140,7 +143,7 @@ Then, we have another $2 \times 2$ system for $q_{21}, q_{31}$. Instead of solvi
 
 $$ p_2 = q_{21},\quad p_3 = q_{31} + q_{32} $$
 
-Thus, setting the values of $p_3, p_3$ we obtain different RK3 versions. For the classic RK3 method:
+Thus, setting the values of $p_2, p_3$ we obtain different RK3 versions. For the classic RK3 method:
 
 $$ p_2 = \frac{1}{2}, p_3 = 1 $$
 $$ b_1 = \frac{1}{6}, b_2 = \frac{4}{6}, b_3 = \frac{1}{6} $$
@@ -166,7 +169,10 @@ To find the constants $b_j, k_j$ we compare these formulas with the fourth order
 
 $$ y_{i+1} = y_i + f(x_i,y_i)h + \frac{f'(x_i,y_i)}{2!}h^2 + \frac{f''(x_i,y_i)}{3!}h^3 + \frac{f^{(3)}(x_i,y_i)}{4!}h^4 $$
 
-Following the same procedure we get 11 equations for 13 unknowns. We need to set two unknowns and calculate the rest. However, the system is much more coupled now.
+Following the same procedure we get 11 equations for 13 unknowns.
+We need to set two unknowns and calculate the rest.
+However, the system is much more coupled now.
+
 The classic RK4 is:
 
 $$ y_{i+1} = y_i + (k_1 + 2k_2 + 2k_3 + k_4)\frac{h}{6} $$
@@ -325,9 +331,9 @@ $$\begin{array}{c|ccccccc}
 In all cases, we calculate the error (difference) between the two predictions and update the step:
 
 $$err = max(\; abs(\; y(O(h^5)) - y(O(h^4)) \;) \;)$$
-$$ h_{new} = h (\frac{eps}{err})^a $$
+$$ h_{new} = 0.9h (\frac{tol}{err})^a $$
 
-where $eps$ is a pre-defined tolerance and $a \approx 0.2$ a parameter.
+where $tol$ is a pre-defined tolerance and $a \approx \frac{1}{order+1} \approx 0.2$ a parameter.
 
 ### Implicit Methods
 For stiff (systems of) ODEs explicit methods are unstable unless very small step $h$ is used.
@@ -381,7 +387,7 @@ $$ \begin{array}{c|ccccc}
 
 And:
 
-$$y_{i+1} = y_i + f(x_{i}+\frac{h}{2}, y_{i}+\frac{h}{2}y_{i+1})h$$
+$$y_{i+1} = y_i + hf(x_{i}+\frac{h}{2}, \frac{y_{i}+y_{i+1}}{2})$$
 
 **Gauss-Legendre-2**:
 Two-stage method ($n_s=2$) that is $O(h^4)$ accurate. The Butcher tableau is:

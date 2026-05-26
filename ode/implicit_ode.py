@@ -1,137 +1,193 @@
 
 from typing import Callable
 
-from linear_systems import direct_solver, iterative_solver
-from utilities import matrix_operations
+import numpy as np
+
+from linear_systems import direct_solver
+from non_linear_systems import newton_solver, non_linear_problem
 from ode import butcher_tableaus, explicit_ode
 
-def implicit_solver(f: Callable[[float, List[float]], List[float]],
-    x0: float, xf: float, h: float, y0: List[float],
-    method: str = 'euler') -> tuple[List[float], List[List[float]]]:
-    """Returns the solution of a system of ODEs using a single-stage implicit method."""
+def implicit_solver(f: Callable[[float, np.ndarray[tuple[int]]], np.ndarray[tuple[int]]],
+    t0: float, tf: float, y0: np.ndarray[tuple[int]], h: float, method: str = 'euler'
+    ) -> tuple[np.ndarray[tuple[int]], np.ndarray[tuple[int, int]]]:
+    """Returns the solution of a system of ODEs using a single-stage implicit method.
 
-    n = int(round((xf-x0)/h))
-    neq = len(y0)
-    x = [x0+i*h for i in range(n+1)]
-    y = [ [0.0 for _ in range(neq)] for _ in range(n+1) ]
-    y[0] = y0[:]
+    Args:
+        f: the right-hand side function of the ODEs
+        t0: the starting value of the independent variable
+        tf: the final value of the independent variable
+        y0: the initial conditions
+        h: the step of integration
+        method (optional): the method of integration
+    Returns:
+        A tuple of arrays of the independent variable and the solutions of the ODEs."""
+
+    if method not in butcher_tableaus.IMPLICIT_METHODS:
+        raise ValueError(f"Method {method} is not supported.")
 
     method_dict = butcher_tableaus.IMPLICIT_METHODS[method]
+
+    n = int(round((tf-t0)/h))
+    neq = y0.shape[0]
+
+    t = np.array([t0+i*h for i in range(n+1)])
+
+    y = np.zeros((n+1, neq))
+
+    y[0,:] = y0.copy()
+
+    ns = method_dict['ns']
+
+    ls_solver = direct_solver.LUSolver()
+
+    u0 = np.zeros((ns*neq))
+    for j in range(ns):
+        u0[j*neq:(j+1)*neq] = y0.copy()
+
+    nr_solver = newton_solver.NewtonSolver(ls_solver, u0=u0, k_max=100, tol=1e-8, r=1.0)
+
+    problem = non_linear_problem.ImplicitODE(f=f, yi=y0, ti=t[0], h=h, method_dict=method_dict)
+
+    for i in range(n):
+
+        ti, yi = t[i], y[i]
+
+        y[i+1] = solve_step(f, ti, yi, h, method_dict, nr_solver, problem)
+
+    return t, y
+
+def solve_step(f: Callable[[float, np.ndarray[tuple[int]]], np.ndarray[tuple[int]]],
+    ti: float, yi: np.ndarray[tuple[int]], h: float, method_dict: dict,
+    nr_solver: newton_solver.NewtonSolver, problem: non_linear_problem.NonlinearProblem
+    ) -> np.ndarray[tuple[int]]:
+    """Returns the solution to a single step of the implicit ODE solver.
+
+    Args:
+        f: the right-hand side function of the ODEs
+        ti: the value of the independent variable at the previous step
+        yi: the values of the independent variables at the previous step
+        h: the step of integration
+        method_dict: the dictionary that contains the method's info
+        nr_solver: the Newton solver object
+        problem: the non-linear problem object
+    Returns:
+        The solution array of the ODEs at the current step."""
+
     ns = method_dict['ns']
     b = method_dict['b']
     p = method_dict['p']
 
-    for i in range(n):
+    neq = yi.shape[0]
 
-        xn, yi = x[i+1], y[i]
+    problem.update(yi=yi, ti=ti, h=h)
 
-        u = newton_raphson(f, xn, yi, h, method_dict)
+    u0 = np.zeros((ns*neq))
+    for j in range(ns):
+        u0[j*neq:(j+1)*neq] = yi.copy()
+    nr_solver.update_guess(u0)
 
-        y_next = yi[:]
-        for j in range(ns):
-            Y_j = u[j*neq:(j+1)*neq]
-            t_j = (xn - h) + p[j]*h
-            k_j = f(t_j, Y_j)
-            for ieq in range(neq):
-                y_next[ieq] += h*b[j]*k_j[ieq]
+    u = nr_solver.solve(problem, output=False)
 
-        y[i+1] = y_next
+    yn = yi.copy()
+    for j in range(ns):
 
-    return x, y
+        Y_j = u[j*neq:(j+1)*neq]
+        t_j = ti + p[j]*h
+        k_j = f(t_j, Y_j)
 
-def newton_raphson(f: Callable[[float, List[float]], List[float]],
-    xn: float, yo: List[float], h: float, method_dict: dict,
-    eps: float = 1e-8, k_max: int = 1000, r: float = 1.0) -> List[float]:
-    """Returns the solution of a non-linear system of algebraic equations, F,
-    around an initial guess, u0, using the Newton-Raphson method"""
+        yn += h*b[j]*k_j
+
+    return yn
+
+def implicit_adaptive_solver(f: Callable[[float, np.ndarray[tuple[int]]], np.ndarray[tuple[int]]],
+    t0: float, tf: float, y0: np.ndarray[tuple[int]], h_min: float = 1e-3, h_max: float = 1.0,
+    tol: float = 1e-4, method: str = 'euler') -> tuple[np.ndarray[tuple[int]], np.ndarray[tuple[int, int]]]:
+    """Returns the solution of a system of ODEs using a single-stage implicit method
+    with adaptive step.
+
+    Args:
+        f: the right-hand side function of the ODEs
+        t0: the starting value of the independent variable
+        tf: the final value of the independent variable
+        y0: the initial conditions
+        h_min (optional): the minimum step of integration
+        h_max (optional): the maximum step of integration
+        tol (optional): the tolerance for adapting the step size
+        method (optional): the method of integration
+    Returns:
+        A tuple of arrays of the independent variable and the solutions of the ODEs."""
+
+    if method not in butcher_tableaus.IMPLICIT_METHODS:
+        raise ValueError(f"Method {method} is not supported.")
+
+    method_dict = butcher_tableaus.IMPLICIT_METHODS[method]
 
     ns = method_dict['ns']
-    n = ns*len(yo)
+    order = method_dict['order']
 
-    u = yo*ns
+    neq = y0.shape[0]
 
-    for k in range(1, k_max+1):
+    t = [t0]
+    y = [y0.copy()]
 
-        res = residual(f, u, xn, yo, h, method_dict)
-        res_norm = vector_operations.norm2(res)
+    h = h_max
 
-        jac = jacobian(u, res, f, xn, yo, h, method_dict)
-        # print(matrix_operations.condition_number(jac))
+    ti = t0
+    yi = y0.copy()
 
-        b = [-val for val in res]
+    ls_solver = direct_solver.LUSolver()
 
-        du = direct_solvers.lu_decomposition_solve(jac, b)
-        # du = iterative_solvers.sor_solver(jac, b, x0=None, w=0.5, output=False)
-
-        cor_norm = vector_operations.norm2(du)
-
-        # print(f'k = {k}, Res Norm: {res_norm:.4e}, Cor Norm: {cor_norm:.4e}')
-        if cor_norm < eps and res_norm < eps:
-            break
-
-        u = [ u[i]+r*du[i] for i in range(n) ]
-
-    return u
-
-def jacobian(u: List[float], res: List[float],
-    f: Callable[[float, List[float]], List[float]], xn: float,
-    yo: List[float], h: float, method_dict: dict, e: float = 1e-8) -> List[List[float]]:
-    """Returns the Jacobian of a system of non-linear algebraic equations
-    around the values, u, of the unknowns."""
-
-    n, m = len(u), len(res)
-
-    jac = [ [0.0 for _ in range(n)] for _ in range(m) ]
-    for j in range(n):
-
-        u_f = u[:]
-        u_f[j] += e
-        res_f = residual(f, u_f, xn, yo, h, method_dict)
-
-        # u_b = u[:]
-        # u_b[j] -= e
-        # #res_b = residual(f, u_b, xn, yo, h, method_dict)
-
-        for i in range(m):
-            jac[i][j] = (res_f[i]-res[i])/e
-            # jac[i][j] = (res_f[i]-res_b[i])/(2*e)
-
-    return jac
-
-def residual(f: Callable[[float, List[float]], List[float]],
-    yn: List[float], xn: float, yo: List[float], h: float,
-    method_dict: dict) -> List[float]:
-    """Returns the residual of an implicit method given the
-    current and previous states and the step, h."""
-
-    neq = len(yo)
-    ns = method_dict['ns']
-    q = method_dict['q']
-    p = method_dict['p']
-
-    Ys = [yn[i*neq:(i+1)*neq] for i in range(ns)]
-
-    t_i = xn - h
-    k_j = [0.0]*ns
+    u0 = np.zeros((ns*neq))
     for j in range(ns):
-        k_j[j] = f(t_i + p[j]*h, Ys[j])
+        u0[j*neq:(j+1)*neq] = y0.copy()
 
-    res = [0.0]*(ns*neq)
-    for j in range(ns):
-        for ieq in range(neq):
-            row = j*neq + ieq
-            s_sum = 0.0
-            for m in range(ns):
-                s_sum += q[j][m]*k_j[m][ieq]
-            res[row] = Ys[j][ieq] - yo[ieq] - h*s_sum
+    nr_solver = newton_solver.NewtonSolver(ls_solver, u0=u0, k_max=100, tol=1e-8, r=1.0)
 
-    return res
+    problem = non_linear_problem.ImplicitODE(f=f, yi=y0, ti=t[0], h=h, method_dict=method_dict)
 
-def adams_moulton(f: Callable[[float, List[float]], List[float]],
-    x0: float, xf: float, h: float, y0: List[float],
-    order: int = 2) -> tuple[List[float], List[List[float]]]:
-    """Returns the solution of a system of ODEs using an
-    Adams-Moulton implicit method of specified order."""
+    while ti < tf:
+
+        if ti+h > tf:
+            h = tf - ti
+
+        # solve with step h
+        y_low = solve_step(f, ti, yi, h, method_dict, nr_solver, problem)
+
+        # solve with step h/2 twice
+        y_mid = solve_step(f, ti, yi, h/2, method_dict, nr_solver, problem)
+        y_high = solve_step(f, ti+h/2, y_mid, h/2, method_dict, nr_solver, problem)
+
+        # new step
+        error_diff = np.max(np.abs(y_high - y_low))
+        max_err = error_diff/((2.0**order) - 1.0)
+
+        exponent = 1.0/(order + 1.0)
+        h_new = 0.9*h*((tol/(max_err + 1e-20))**exponent)
+
+        if max_err <= tol or h <= h_min:
+            ti = ti + h
+            yi = y_high
+            t.append(ti)
+            y.append(yi)
+
+        h = min( max(h_min, h_new), h_max )
+
+    return np.array(t), np.array(y)
+
+def adams_moulton(f: Callable[[float, np.ndarray[tuple[int]]], np.ndarray[tuple[int]]],
+    t0: float, tf: float, y0: np.ndarray[tuple[int]], h: float,
+    order: int = 4) -> tuple[np.ndarray[tuple[int]], np.ndarray[tuple[int, int]]]:
+    """Returns the solution of a system of ODEs using the Adams-Moulton method.
+
+    Args:
+        f: the right-hand side function of the ODEs
+        t0: the starting value of the independent variable
+        tf: the final value of the independent variable
+        y0: the initial conditions
+        h: the step of integration
+        order (optional): the order of the Adams-Moulton method
+    Returns:
+        A tuple of arrays of the independent variable and the solutions of the ODEs."""
 
     AM_COEFFS = {
         2: [0.5, 0.5],
@@ -146,107 +202,49 @@ def adams_moulton(f: Callable[[float, List[float]], List[float]],
 
     b = AM_COEFFS[order]
 
-    n = int(round((xf-x0)/h))
+    n = int(round((tf-t0)/h))
     if n < order:
         raise ValueError(f"Order {order} larger than n.")
 
-    neq = len(y0)
-    x = [x0+i*h for i in range(n+1)]
-    y = [ [0.0 for _ in range(neq)] for _ in range(n+1) ]
-    y[0] = y0[:]
+    neq = y0.shape[0]
+
+    t = np.array([t0+i*h for i in range(n+1)])
+
+    y = np.zeros((n+1, neq))
+
+    y[0,:] = y0.copy()
 
     for i in range(order-1):
-        xi = x[i]
-        _, y_rk = explicit_ode.rk4(f, xi, xi+h, h, y[i])
+        ti = t[i]
+        _, y_rk = explicit_ode.rk4(f, ti, ti+h, y[i], h)
         y[i+1] = y_rk[-1]
 
-    f_past = [f(x[i], y[i]) for i in range(order)]
+    f_past = np.array([f(t[i], y[i]) for i in range(order)])
+
+    ls_solver = direct_solver.LUSolver()
+
+    u0 = y0.copy()
+
+    nr_solver = newton_solver.NewtonSolver(ls_solver, u0=u0, k_max=100, tol=1e-8, r=1.0)
+
+    problem = non_linear_problem.AdamsMoultonODE(f=f, yi=y0, ti=t[0], h=h, b0=b[0])
 
     for i in range(order-1, n):
-        y_next = y[i][:]
+
+        y_next = y[i,:]
+
         # for k in range(order-1):
-        for k in range(1,order):
+        for k in range(1, order):
             # f_j = f_past[-(k+1)]
             f_j = f_past[-k]
             for ieq in range(neq):
                 y_next[ieq] += h*b[k]*f_j[ieq]
 
-        y[i+1] = newton_raphson_am(f, x[i+1], y_next, h, b[0])
+        problem.update(yi=y_next, ti=ti)
+
+        y[i+1] = nr_solver.solve(problem, output=False)
+
         if i+1 < n:
-            f_past = f_past[1:] + [f(x[i+1], y[i+1])]
+            f_past = f_past[1:] + [f(t[i+1], y[i+1])]
 
-    return x, y
-
-def newton_raphson_am(f: Callable[[float, List[float]], List[float]],
-    xn: float, yo: List[float], h: float, b0: float,
-    eps: float = 1e-8, k_max: int = 1000, r: float = 1.0) -> List[float]:
-    """Returns the solution of a non-linear system of algebraic equations, F,
-    around an initial guess, u0, using the Newton-Raphson method"""
-
-    n = len(yo)
-
-    u = yo[:]
-
-    for k in range(1, k_max+1):
-
-        res = residual_am(f, u, xn, yo, h, b0)
-        res_norm = vector_operations.norm2(res)
-
-        jac = jacobian_am(u, res, f, xn, yo, h, b0)
-        # print(matrix_operations.condition_number(jac))
-
-        b = [-val for val in res]
-
-        du = direct_solvers.lu_decomposition_solve(jac, b)
-        # du = iterative_solvers.sor_solver(jac, b, x0=None, w=0.5, output=False)
-
-        cor_norm = vector_operations.norm2(du)
-
-        # print(f'k = {k}, Res Norm: {res_norm:.4e}, Cor Norm: {cor_norm:.4e}')
-        if cor_norm < eps and res_norm < eps:
-            break
-
-        u = [ u[i]+r*du[i] for i in range(n) ]
-
-    return u
-
-def jacobian_am(u: List[float], res: List[float],
-    f: Callable[[float, List[float]], List[float]], xn: float,
-    yo: List[float], h: float, b0: float, e: float = 1e-8) -> List[List[float]]:
-    """Returns the Jacobian of a system of non-linear algebraic equations
-    around the values, u, of the unknowns."""
-
-    n, m = len(u), len(res)
-
-    jac = [ [0.0 for _ in range(n)] for _ in range(m) ]
-    for j in range(n):
-
-        u_f = u[:]
-        u_f[j] += e
-        res_f = residual_am(f, u_f, xn, yo, h, b0)
-
-        # u_b = u[:]
-        # u_b[j] -= e
-        # #res_b = residual_am(f, u_b, xn, yo, h, method_dict)
-
-        for i in range(m):
-            jac[i][j] = (res_f[i]-res[i])/e
-            # jac[i][j] = (res_f[i]-res_b[i])/(2*e)
-
-    return jac
-
-def residual_am(f: Callable[[float, List[float]], List[float]],
-    yn: List[float], xn: float, yo: List[float], h: float,
-    b0: float) -> List[float]:
-    """Returns the residual of an implicit method given the
-    current and previous states and the step, h."""
-
-    neq = len(yo)
-
-    f_val = f(xn,yn)
-
-    res = [0.0]*neq
-    for ieq in range(neq):
-        res[ieq] = yn[ieq] - yo[ieq] - h*b0*f_val[ieq]
-
-    return res
+    return t, y
