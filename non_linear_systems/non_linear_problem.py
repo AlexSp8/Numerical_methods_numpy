@@ -198,39 +198,32 @@ class ImplicitODE(NonlinearProblem):
         self.h = h
         self.method_dict = method_dict
 
-    def update(self, yi: np.ndarray[tuple[int]], ti: float, h: float = None):
+    def update(self, yi: np.ndarray[tuple[int]], ti: float, h: float):
 
         self.yi = yi
         self.ti = ti
         if h is not None:
             self.h = h
 
-    def f_res(self, yn: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
+    def f_res(self, u: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
 
         neq = (self.yi).shape[0]
         ns = self.method_dict['ns']
         q = self.method_dict['q']
         p = self.method_dict['p']
 
-        # Ys = yn.reshape((ns, neq))
-        # k_j = np.zeros((ns,neq))
-        # for j in range(ns):
-        #     k_j[j] = self.f(self.ti + p[j]*self.h, Ys[j])
-        # res_matrix = Ys - self.yi - self.h*(np.matmul(q,k_j))
-        # return res_matrix.flatten()
+        ti, yi, h = self.ti, self.yi, self.h
 
-        Ys = np.zeros((ns,neq))
-        k_j = np.zeros((ns,neq))
+        # k_mat = u.reshape(ns, neq)
+        k_mat = np.zeros((ns, neq))
         for j in range(ns):
-            Ys[j] = yn[j*neq:(j+1)*neq]
-            k_j[j] = self.f(self.ti + p[j]*self.h, Ys[j])
+            k_mat[j,:] = u[j*neq:(j+1)*neq]
 
         res = np.zeros(ns*neq)
         for j in range(ns):
-            for ieq in range(neq):
-                row = j*neq + ieq
-                s_sum = np.dot(q[j,:], k_j[:,ieq])
-                res[row] = Ys[j,ieq] - self.yi[ieq] - self.h*s_sum
+            yj = yi[:] + h*np.dot(q[j,:], k_mat[:,:])
+            fj = self.f(ti + p[j]*h, yj)
+            res[j*neq:(j+1)*neq] = k_mat[j,:] - fj[:]
 
         return res
 

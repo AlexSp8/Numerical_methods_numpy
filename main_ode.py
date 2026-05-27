@@ -1,7 +1,8 @@
 
 import numpy as np
 
-from ode import explicit_ode, implicit_ode, plot
+from ode import plot
+from ode import ivp
 
 def f1(t: float, y: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
     return np.array([-2*(t**3) + 12*(t**2) - 20*t + 8.5]) # Explicit Euler, RK2, RK3, RK4 test
@@ -26,75 +27,87 @@ def main():
 
     print('ODEs')
 
-    print('\nExplicit Euler')
-    y0 = np.array([1.0])
-    t, y = explicit_ode.explicit_euler(f1, t0=0.0, tf=4.0, y0=y0, h=0.5)
-    y0 = np.array([4.0, 6.0])
-    t, y = explicit_ode.explicit_euler(f_sys, t0=0.0, tf=2.0, y0=y0, h=0.5)
-    y0 = np.array([2.0])
-    t, y = explicit_ode.explicit_euler(f2, t0=0.0, tf=4.0, y0=y0, h=1.0)
+    # print('\nExplicit')
+    # f, t0, tf, y0, method, h = f1, 0.0, 4.0, np.array([1.0]), 'euler', 0.5
+    # f, t0, tf, y0, method, h = f_sys, 0.0, 2.0, np.array([4.0, 6.0]), 'euler', 0.5
+    # f, t0, tf, y0, method, h = f2, 0.0, 4.0, np.array([2.0]), 'euler', 1.0
 
-    print('\nHeun method')
-    y0 = np.array([2.0])
-    t, y = explicit_ode.heun(f2, t0=0.0, tf=4.0, y0=y0, h=1.0, k_max=1)
+    # f, t0, tf, y0, method, h = f2, 0.0, 4.0, np.array([2.0]), 'heun', 1.0
 
-    print('\nMidpoint method')
-    y0 = np.array([2.0])
-    t, y = explicit_ode.midpoint(f2, t0=0.0, tf=4.0, y0=y0, h=1.0)
+    # f, t0, tf, y0, method, h = f2, 0.0, 4.0, np.array([2.0]), 'midpoint', 1.0
 
-    print('\nRK2')
-    y0 = np.array([1.0])
-    t, y = explicit_ode.rk2(f1, t0=0.0, tf=4.0, y0=y0, h=0.5, a2=0.5)
+    # f, t0, tf, y0, method, h = f1, 0.0, 4.0, np.array([1.0]), 'ralston', 0.5
 
-    print('\nRK3')
-    y0 = np.array([2.0])
-    t, y = explicit_ode.rk3(f1, t0=0.0, tf=4.0, y0=y0, h=0.5, p1=0.5, p2=1.0)
+    # f, t0, tf, y0, method, h = f1, 0.0, 4.0, np.array([1.0]), 'rk3', 0.5
 
-    print('\nRK4')
-    y0 = np.array([1.0])
-    t, y = explicit_ode.rk4(f1, t0=0.0, tf=4.0, y0=y0, h=0.5)
-    y0 = np.array([2.0])
-    t, y = explicit_ode.rk4(f2, t0=0.0, tf=4.0, y0=y0, h=1.0)
-    y0 = np.array([4.0, 6.0])
-    t, y = explicit_ode.rk4(f_sys, t0=0.0, tf=2.0, y0=y0, h=0.5)
+    # f, t0, tf, y0, method, h = f1, 0.0, 4.0, np.array([1.0]), 'rk4', 0.5
+    # f, t0, tf, y0, method, h = f_sys, 0.0, 2.0, np.array([4.0, 6.0]), 'rk4', 0.5
+    # f, t0, tf, y0, method, h = f2, 0.0, 4.0, np.array([2.0]), 'rk4', 1.0
 
-    print('\nRK5')
-    y0 = np.array([1.0])
-    t, y = explicit_ode.rk5(f1, t0=0.0, tf=4.0, y0=y0, h=0.5)
-    y0 = np.array([2.0])
-    t, y = explicit_ode.rk5(f2, t0=0.0, tf=4.0, y0=y0, h=1.0)
+    # f, t0, tf, y0, method, h = f1, 0.0, 4.0, np.array([1.0]), 'rk5', 0.5
+    # f, t0, tf, y0, method, h = f2, 0.0, 4.0, np.array([2.0]), 'rk5', 1.0
 
-    print('\nRK45 Fehlberg')
-    y0 = np.array([0.5])
-    t, y = explicit_ode.rk45_fehlberg(f_adapt, t0=0.0, tf=4.0, y0=y0, h_min=1e-6, h_max=2.0)
+    # ivp_solver = ivp.ExplicitIVPSolver(f, t0, tf, y0, method, h=h)
 
-    print('\nRK45 Cash-Karp')
-    y0 = np.array([0.5])
-    t, y = explicit_ode.rk45_cash_karp(f_adapt, t0=0.0, tf=4.0, y0=y0, h_min=1e-6, h_max=2.0)
 
-    print('\nRK45 Dormand-Prince')
-    y0 = np.array([0.5])
-    t, y = explicit_ode.rk45_dormand_prince(f_adapt, t0=0.0, tf=4.0, y0=y0, h_min=1e-6, h_max=2.0)
+    # print('\nExplicit Adaptive')
+    # f, t0, tf, y0, method = f_adapt, 0.0, 4.0, np.array([2.0]), 'fehlberg'
+    # h_min, h_max, atol, rtol = 1e-6, 2.0, 1e-8, 1e-6
 
-    print('\nAdams-Bashforth')
-    y0 = np.array([2.0])
-    t, y = explicit_ode.adams_bashforth(f2, t0=0.0, tf=4.0, y0=y0, h=1.0, order=4)
+    # f, t0, tf, y0, method = f_adapt, 0.0, 4.0, np.array([2.0]), 'cash-karp'
+    # h_min, h_max, atol, rtol = 1e-6, 2.0, 1e-8, 1e-6
+
+    # f, t0, tf, y0, method = f_adapt, 0.0, 4.0, np.array([2.0]), 'dormand-prince'
+    # h_min, h_max, atol, rtol = 1e-6, 2.0, 1e-8, 1e-6
+
+    # ivp_solver = ivp.ExplicitAdaptiveIVPSolver(f, t0, tf, y0, method,
+    #     h_min=h_min, h_max=h_max, atol=atol, rtol=rtol)
+
+
+    # print('\nImplicit')
+    # f, t0, tf, y0, method, h = f_im, 0.0, 5.0, np.array([0.0]), 'euler', 0.05
+    # f, t0, tf, y0, method, h = f_im, 0.0, 5.0, np.array([0.0]), 'midpoint', 0.01
+    # f, t0, tf, y0, method, h = f_im, 0.0, 5.0, np.array([0.0]), 'crank-nicolson', 0.01
+    # f, t0, tf, y0, method, h = f_im, 0.0, 5.0, np.array([0.0]), 'gauss-legendre-2', 0.05
+    # f, t0, tf, y0, method, h = f_im, 0.0, 5.0, np.array([0.0]), 'gauss-legendre-3', 0.05
+    # f, t0, tf, y0, method, h = f_im, 0.0, 5.0, np.array([0.0]), 'radau-iia-2', 0.05
+    # f, t0, tf, y0, method, h = f_im, 0.0, 5.0, np.array([0.0]), 'radau-iia-3', 0.05
+    # f, t0, tf, y0, method, h = f_im, 0.0, 5.0, np.array([0.0]), 'lobatto-iiic-2', 0.05
+    # f, t0, tf, y0, method, h = f_im, 0.0, 5.0, np.array([0.0]), 'lobatto-iiia-3', 0.05
+
+    # ivp_solver = ivp.ImplicitIVPSolver(f, t0, tf, y0, method, h=h)
+
+
+    # print('\nImplicit Adaptive')
+    # f, t0, tf, y0, method = f_im, 0.0, 5.0, np.array([0.0]), 'sdirk-3a'
+    # h_min, h_max, atol, rtol = 1e-3, 2.0, 1e-6, 1e-3
+
+    # f, t0, tf, y0, method = f_im, 0.0, 5.0, np.array([0.0]), 'cash-sdirk-4'
+    # h_min, h_max, atol, rtol = 1e-4, 2.0, 1e-8, 1e-4
+
+    # f, t0, tf, y0, method = f_im, 0.0, 5.0, np.array([0.0]), 'radau-iia-5-adaptive'
+    # h_min, h_max, atol, rtol = 1e-3, 2.0, 1e-6, 1e-2
+
+    # ivp_solver = ivp.ImplicitAdaptiveIVPSolver(f, t0, tf, y0, method,
+    #     h_min=h_min, h_max=h_max, atol=atol, rtol=rtol)
+
+
+    # print('\nAdams-Bashforth')
+    # f, t0, tf, y0, method, h = f2, 0.0, 4.0, np.array([2.0]), 'rk4', 0.5
+    # ivp_solver = ivp.ExplicitMultistepIVPSolver(f, t0, tf, y0, method, h=h, order=5)
+
+
+    # print('\nAdams Moulton')
+    # f, t0, tf, y0, method, h = f2, 0.0, 4.0, np.array([2.0]), 'rk4', 0.5
+    # ivp_solver = ivp.ImplicitMultistepIVPSolver(f, t0, tf, y0, method, h=h, order=5)
+
 
     print('\nABM PECE')
-    y0 = np.array([2.0])
-    t, y = explicit_ode.abm_pece(f2, t0=0.0, tf=4.0, y0=y0, h=1.0, order=4)
+    f, t0, tf, y0, method, h = f2, 0.0, 4.0, np.array([2.0]), 'rk4', 0.5
+    ivp_solver = ivp.PredictorCorrectorIVPSolver(f, t0, tf, y0, method, h=h, order=5)
 
-    print('\nImplicit')
-    y0 = np.array([0.0])
-    t, y = implicit_ode.implicit_solver(f_im, t0=0.0, tf=5.0, y0=y0, h=0.005, method='euler')
 
-    print('\nImplicit Adaptive')
-    y0 = np.array([0.0])
-    t, y = implicit_ode.implicit_adaptive_solver(f_im, t0=0.0, tf=5.0, y0=y0, method='euler')
-
-    print('\nAdams-Moulton')
-    y0 = np.array([2.0])
-    t, y = implicit_ode.adams_moulton(f2, t0=0.0, tf=4.0, y0=y0, h=1.0, order=4)
+    t, y = ivp_solver.solve()
 
     for i in range(t.shape[0]):
         print(t[i], y[i])
