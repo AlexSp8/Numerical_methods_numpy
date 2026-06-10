@@ -1,5 +1,14 @@
 
+import sys
+from pathlib import Path
+
 import numpy as np
+
+current_dir = Path(__file__).resolve().parent
+parent_dir = current_dir.parent
+
+if str(parent_dir) not in sys.path:
+    sys.path.insert(0, str(parent_dir))
 
 from utilities import matrix_operations
 from linear_systems import direct_solver, iterative_solver

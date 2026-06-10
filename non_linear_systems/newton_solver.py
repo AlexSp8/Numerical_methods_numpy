@@ -16,6 +16,7 @@ class NewtonSolver:
         self.k_max = k_max
         self.tol = tol
         self.r = r
+        self.is_full = True
 
     def update_guess(self, u0: np.ndarray[tuple[int]]):
 
@@ -58,11 +59,23 @@ class NewtonSolver:
 
         u = self.u0.copy()
 
+        n, neq = u.shape[0], u.shape[0]
+
+        res = np.zeros(neq)
+
+        jac = np.zeros((neq,n))
+
+        is_full = self.is_full
+        is_full = True
+
         for k in range(1, self.k_max+1):
 
             res = problem.f_res(u)
 
-            jac = problem.jacobian(u, res)
+            if is_full:
+                jac = problem.jacobian(u, res)
+                # for i in range(n):
+                #     print(" ".join(f"{x:.2e}" for x in jac[i, :]))
 
             du = solver.solve(jac, -res)
             # solver.x0 = du
@@ -75,9 +88,12 @@ class NewtonSolver:
             if (res_norm < self.tol) and (cor_norm < self.tol):
                 return u
 
+            if cor_norm < np.sqrt(self.tol):
+                is_full = False
+
             u = u + self.r*du
 
-        print(f"Warning: Maximum iterations ({self.k_max}) reached without converging.")
+        print(f"Warning: Newton maximum iterations ({self.k_max}) reached without converging.")
 
         return u
 
@@ -116,13 +132,17 @@ class LevenbergMarquardtSolver(NewtonSolver):
 
         ssr = np.sum(res**2)
 
-        n, m = self.u0.shape[0], res.shape[0]
+        n, neq = self.u0.shape[0], res.shape[0]
 
         damp, s = self.l0, self.scale
 
+        is_full = self.is_full
+        is_full = True
+
         for k in range(1, self.k_max+1):
 
-            jac = problem.jacobian(u, res)
+            if is_full:
+                jac = problem.jacobian(u, res)
 
             # print(matrix_operations.condition_number(jac))
 
@@ -157,7 +177,7 @@ class LevenbergMarquardtSolver(NewtonSolver):
                 ssr_trial = np.sum(res_trial**2)
 
                 if ssr_trial < ssr:
-                    u, ssr, res = u_trial, ssr_trial ,res_trial
+                    u, ssr, res = u_trial, ssr_trial, res_trial
                     damp /= s  # Move towards Newton
                     break
                 else:
@@ -172,6 +192,9 @@ class LevenbergMarquardtSolver(NewtonSolver):
 
             if (res_norm < self.tol) or (cor_norm < self.tol):
                 return u
+
+            if cor_norm < np.sqrt(self.tol):
+                is_full = False
 
         print(f"Warning: Maximum iterations ({self.k_max}) reached without converging.")
 

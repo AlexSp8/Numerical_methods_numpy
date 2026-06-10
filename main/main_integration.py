@@ -1,14 +1,21 @@
 
+import sys
 from pathlib import Path
 
 import numpy as np
 import numpy.typing as npt
 
+current_dir = Path(__file__).resolve().parent
+parent_dir = current_dir.parent
+
+if str(parent_dir) not in sys.path:
+    sys.path.insert(0, str(parent_dir))
+
 from integration import data_integration, function_integration
 from utilities import io_utils
 
 # Path to the Datasets directory
-DATASETS_DIR = Path(__file__).parent / 'integration/data'
+DATASETS_DIR = parent_dir/'integration/data'
 
 def f(x: float) -> float:
     return 0.2 + 25*x - 200*(x**2) + 675*(x**3) - 900*(x**4) + 400*(x**5)
@@ -43,7 +50,7 @@ def main():
     print(function_integration.gauss_legendre_1D(f, a=0.0, b=0.8, n=3))
 
     print('\nTrapezoidal data')
-    file_path = DATASETS_DIR / 'integration_data1.txt'
+    file_path = DATASETS_DIR/'integration_data1.txt'
     data = np.loadtxt(file_path, delimiter=None, skiprows=0, usecols=(0,1))
     x = data[:,0]
     y = data[:,-1]

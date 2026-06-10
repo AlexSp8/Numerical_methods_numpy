@@ -4,7 +4,9 @@ from typing import Callable
 import numpy as np
 
 from linear_systems import direct_solver
-from non_linear_systems import newton_solver, non_linear_problem
+from non_linear_systems import newton_solver
+from non_linear_systems.non_linear_problem import TransientBVP1DFD
+from ode.time_integration import TimeIntegration
 
 def create_mesh(nnodes: int, xd: np.ndarray[tuple[int]],
     p: int = 1) -> np.ndarray[tuple[int]]:
@@ -35,21 +37,21 @@ def create_mesh(nnodes: int, xd: np.ndarray[tuple[int]],
 
     return x
 
-def solve_bvp_1d(
-    f: Callable[[float, np.ndarray[tuple[int]], np.ndarray[tuple[int]]], np.ndarray[tuple[int]]],
-    x: np.ndarray[tuple[int]], bc: dict, neq: int = 1
-    ) -> np.ndarray[tuple[int]]:
+def solve_bvp_1d_fd(
+    f: Callable[[float, np.ndarray[tuple[int]], np.ndarray[tuple[int]], np.ndarray[tuple[int]]],
+                np.ndarray[tuple[int]]], x: np.ndarray[tuple[int]], bc: dict[str, Callable],
+    neq: int = 1, u_guess: np.ndarray[tuple[int]] = None) -> np.ndarray[tuple[int]]:
     """Returns the solution of the non-linear system of algebraic equations
-    that results from FD approximation of a system of second order 1D-BVP
-    problems using the Newton-Raphson method.
+    that results from Finite Differences (FD) approximation of a system of second order 1D-BVP
+    equations using the Newton-Raphson method.
 
     Args:
-        f: the production term function
-        x: the domain array discretized with Finite Differences
-        bc: the dictionary describing the boundary conditions
+        f: the differential equation in residual form
+        x: the discretized domain array
+        bc: the dictionary containing the boundary conditions functions
         neq: the number of equations to be solved
     Returns:
-        The solution to the system of ODEs (2nd order BVP-1D) at the nodes of the domain."""
+        The FD solution to the system of ODEs (2nd order BVP-1D) at the nodes of the domain."""
 
     nnodes = x.shape[0]
 
@@ -57,10 +59,15 @@ def solve_bvp_1d(
 
     ls_solver = direct_solver.LUSolver()
 
-    u0 = np.ones(nunknowns)
+    if u_guess is None:
+        u0 = np.ones(nunknowns)
+    else:
+        u0 = u_guess.copy()
 
     nr_solver = newton_solver.NewtonSolver(ls_solver, u0=u0, k_max=100, tol=1e-8, r=1.0)
 
-    problem = non_linear_problem.BVP1D(f=f, x=x, bc=bc, neq=neq)
+    t0, tf, dt0, dt_min, dt_max, atol, rtol = 0.0, 0.0, float('inf'), float('inf'), float('inf'), 0.0, 0.0
+    time_int = TimeIntegration(t0, tf, dt0, dt_min, dt_max, atol, rtol, u0)
+    problem = TransientBVP1DFD(f=f, x=x, bc=bc, time_int=time_int)
 
     return nr_solver.solve(problem, output=True)

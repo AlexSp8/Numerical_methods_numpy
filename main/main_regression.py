@@ -1,11 +1,19 @@
 
+import sys
 from pathlib import Path
+
 import numpy as np
+
+current_dir = Path(__file__).resolve().parent
+parent_dir = current_dir.parent
+
+if str(parent_dir) not in sys.path:
+    sys.path.insert(0, str(parent_dir))
 
 from curve_fitting import regression, plot
 
 # Path to the Datasets directory
-DATASETS_DIR = Path(__file__).parent / 'curve_fitting/data'
+DATASETS_DIR = parent_dir/'curve_fitting/data'
 
 def f_b0(xi: np.ndarray[tuple[int], np.dtype[np.float64]]
     ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:

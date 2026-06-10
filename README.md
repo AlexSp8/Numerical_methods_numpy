@@ -63,13 +63,16 @@ This library provides implementations of fundamental numerical algorithms:
 - **Adams-Bashforth**: Explicit multistep
 - **Implicit**: Euler, Midpoint, Crank-Nicolson, Gauss-Legendre (2- and 3-stage), Radau-IIA (2- and 3-stage), Lobatto IIIC-2, Lobatto IIIA-3, Adams-Moulton
 - **BVP 1D**: $2^{nd}$ order non-linear BVP 1D
-- **EVP 1D**: $2^{nd}$ order linear EVP 1D (Sturm-Liouville)
+
 
 ### Utilities (`utilities`)
 - Matrix operations (addition, multiplication, transpose, determinant, inverse, etc.)
 - Statistics (mean, STD, variance, etc.)
 - Indexing: nearest index, starting index, Bubble Sort
 - I/O: read, write files
+
+### Main files (`main`)
+- Test scripts for each algorithm.
 
 ## Installation
 
@@ -140,7 +143,7 @@ print(f"Solution: {solution}")
 
 ```
 numerical_methods/
-├── main_*.py          # Demos
+├── main/          # Test scripts
 ├── roots/
 │   ├── bracketing.py
 │   ├── hybrid.py
@@ -155,12 +158,14 @@ numerical_methods/
 ├── optimization/
 │   ├── constrained/
 │       └── equality_constraints.py
-│   ├── unconstrained_1D/
+│   ├── one_dimensional/
 │       ├── bracketing.py
+│       ├── hybrid.py
 │       └── open_methods.py
-│   └── unconstrained_multi/
+│   └── unconstrained/
 │       ├── direct_methods.py
-│       └── gradient_methods.py
+│       ├── gradient_methods.py
+│       └── line_search.py
 ├── curve_fitting/
 │       ├── fourier_transform.py
 │       ├── interpolation.py
@@ -178,12 +183,15 @@ numerical_methods/
 │       ├── function_differentiation.py
 │       └── partial_derivatives.py
 ├── ode/
-│       ├── explicit_ode.py
-│       ├── implicit_ode.py
 │       ├── butcher_tableaus.py
-│       ├── bvp_1d.py
-│       ├── evp_1d.py
-│       └── plot.py
+│       ├── explicit_ode.py
+│       ├── ivp.py
+│       ├── bvp_1d_fd.py
+│       ├── plot.py
+│       └── time_integration.py
+├── pde/
+│       ├── bvp_fd.py
+│       └── mol_1d.py
 
 └── utilities/
     ├── indexing.py             # Index finding, sort
@@ -192,15 +200,6 @@ numerical_methods/
     └── statistics.py           # Statistics quantities
 ```
 
-## Educational Purpose
-
-This library is designed for:
-- Learning numerical methods algorithms
-- Comparing different solution approaches
-- Understanding convergence behavior
-- Research and prototyping
-
 ## Future Development
 
-- [ ] Add PDEs module
 - [ ] Add more advanced algorithms

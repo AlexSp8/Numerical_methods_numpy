@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod
 import numpy as np
 import numpy.typing as npt
 
+from ode.time_integration import TimeIntegration
+
 class NonlinearProblem(ABC):
 
     def __init__(self,
@@ -136,6 +138,7 @@ class LagrangeMultipliers(NonlinearProblem):
         r_tot = np.zeros(nx+l_m.shape[0])
         r_tot[:nx] = r1.copy()
         r_tot[nx:] = r2.copy()
+
         return r_tot
 
 
@@ -198,7 +201,7 @@ class ImplicitODE(NonlinearProblem):
         self.h = h
         self.method_dict = method_dict
 
-    def update(self, yi: np.ndarray[tuple[int]], ti: float, h: float):
+    def update(self, yi: np.ndarray[tuple[int]], ti: float, h: float = None):
 
         self.yi = yi
         self.ti = ti
@@ -222,7 +225,7 @@ class ImplicitODE(NonlinearProblem):
         res = np.zeros(ns*neq)
         for j in range(ns):
             yj = yi[:] + h*np.dot(q[j,:], k_mat[:,:])
-            fj = self.f(ti + p[j]*h, yj)
+            fj = self.f(ti+p[j]*h, yj)
             res[j*neq:(j+1)*neq] = k_mat[j,:] - fj[:]
 
         return res
@@ -251,8 +254,9 @@ class AdamsMoultonODE(NonlinearProblem):
 
     def f_res(self, yn: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
 
-        f_val = self.f(self.ti+self.h, yn)
-        return yn - self.yi - self.h*self.b0*f_val
+        ti, h, yi, b0 = self.ti, self.h, self.yi, self.b0
+        f_val = self.f(ti+h, yn)
+        return yn - yi - h*b0*f_val
 
     def jacobian(self, u: np.ndarray[tuple[int]], res: np.ndarray[tuple[int]],
         h: float = 1e-8) -> np.ndarray[tuple[int, int]]:
@@ -260,147 +264,171 @@ class AdamsMoultonODE(NonlinearProblem):
         return super().jacobian(u, res, h)
 
 
-class BVP1D(NonlinearProblem):
+class TransientBVP1DFD(NonlinearProblem):
 
-    def __init__(self, *args, x: np.ndarray[tuple[int]],
-        bc: dict, neq: int, **kwargs):
+    def __init__(self, *args, x: np.ndarray[tuple[int]], bc: dict[str, Callable],
+        time_int: TimeIntegration, theta: float = 1.0, **kwargs):
 
         super().__init__(*args, **kwargs)
         self.x = x
         self.bc = bc
-        self.neq = neq
+        self.time_int = time_int
+        self.theta = theta
 
     def f_res(self, u: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
 
-        nnodes, nunknowns = (self.x).shape[0], u.shape[0]
+        f = self.f
+        x = self.x
+        time_int = self.time_int
+        theta = self.theta
 
-        neq = self.neq
+        t = time_int.t
+
+        up = time_int.up
+        u2p = time_int.up2
+
+        if time_int.inc == 1:
+            u2p = 2*up - u
+
+        dt = time_int.dt
+        dtp = time_int.dtp
+
+        o1_h2_p_i = (2*dt+dtp)/(dt*(dt+dtp))  # 1st order (h2) backward, ui
+        o1_h2_p_p = -(dt+dtp)/(dt*dtp)        # 1st order (h2) backward, up
+        o1_h2_p_2p = dt/(dtp*(dt+dtp))        # 1st order (h2) backward, u2p
+
+        nnodes, nunknowns = x.shape[0], u.shape[0]
+
+        neq = round(nunknowns/nnodes)
 
         res = np.zeros(nunknowns)
 
         for i in range(1, nnodes-1):
 
-            hf = self.x[i+1] - self.x[i]
-            hb = self.x[i] - self.x[i-1]
+            hf = x[i+1] - x[i]
+            hb = x[i] - x[i-1]
+
+            o2_h2_c = 2.0/(hf+hb) # 2nd order (h2) central
+
+            # o1_h2_c = 1.0/(hf*hb*(hf+hb)) # 1st order (h2) central
+
+            # h2b = x[i-1] - x[i-2]
+            # o1_h2_b_i = (2*hb+h2b)/(hb*(hb+h2b)) # 1st order (h2) backward, ui
+            # o1_h2_b_b = -(hb+h2b)/(hb*h2b)       # 1st order (h2) backward, ub
+            # o1_h2_b_2b = hb/(h2b*(hb+h2b))       # 1st order (h2) backward, u2b
+
+            # h2f = x[i+2] - x[i+1]
+            # o1_h2_f_i = -(2*hf+h2f)/(hf*(hf+h2f)) # 1st order (h2) forward, ui
+            # o1_h2_f_f = (hf+h2f)/(hf*h2f)         # 1st order (h2) forward, uf
+            # o1_h2_f_2f = -hf/(h2f*(hf+h2f))       # 1st order (h2) forward, u2f
 
             row1 = i*neq
+            row_f = row1+neq
 
-            ui = u[row1:row1+neq]
+            ub_i = u[row1-neq:row1]
+            u_i = u[row1:row_f]
+            uf_i = u[row_f:row_f+neq]
 
-            t2_hf_hb = 2.0/(hf+hb)
+            up_i = up[row1:row_f]
+            u2p_i = u2p[row1:row_f]
+            
+            upb_i = up[row1-neq:row1]
+            upf_i = up[row_f:row_f+neq]
 
-            # 1st, 2nd derivatives
-            dui = np.zeros(neq)
-            d2ui = np.zeros(neq)
-            for jeq in range(neq):
+            # dudt_i = (u_i - up_i)/dt # O(h) backward
+            # dudt_i = (3.0*u_i - 4.0*up_i + up2_i)/(2.0*dt) # O(h2) backward, dt: constant
+            dudt_i = (o1_h2_p_i*u_i + o1_h2_p_p*up_i + o1_h2_p_2p*u2p_i) # O(h2) backward
 
-                row = row1 + jeq
+            dudx_i = (uf_i - u_i)/hf # O(h) forward
+            # dudx_i = (uf_i - ub_i)/(hf+hb) # O(h) central
+            # dudx_i = ((hb**2)*uf_i + (hf**2-hb**2)*u_i + (hf**2)*ub_i)*o1_h2_c # O(h2) central
+            dudx_i *= theta
+            
+            dupdx_i = (upf_i - up_i)/hf # O(h) forward
+            # dupdx_i = (upf_i - upb_i)/(hf+hb) # O(h) central
+            # dupdx_i = ((hb**2)*upf_i + (hf**2-hb**2)*up_i + (hf**2)*upb_i)*o1_h2_c # O(h2) central
+            dudx_i += (1.0-theta)*dupdx_i
 
-                dui[jeq] = (u[row+neq] - u[row])/hf
-                # dui[jeq] = (u[row+neq] - u[row-neq])/(hb+hf)
+            d2udx2_i = ((uf_i-u_i)/hf - (u_i-ub_i)/hb)*o2_h2_c # O(h2) central
+            d2udx2_i *= theta
+            
+            d2updx2_i = ((upf_i-up_i)/hf - (up_i-upb_i)/hb)*o2_h2_c # O(h2) central
+            d2udx2_i += (1.0-theta)*d2updx2_i
 
-                d2ui[jeq] = (u[row+neq] - u[row])/hf
-                d2ui[jeq] -= (u[row] - u[row-neq])/hb
-                d2ui[jeq] *= t2_hf_hb
+            u_theta_i = theta*u_i + (1.0-theta)*up_i
 
-            # source term
-            # fi = self.f(self.x[i], ui, dui) # explicit form
-            fi = self.f(self.x[i], ui, dui, d2ui) # implicit form
+            t_theta = theta*t + (1.0-theta)*(t-dt)
 
-            for jeq in range(neq):
-                row = row1 + jeq
-                # res[row] = d2ui[jeq] + fi[jeq] # explicit form
-                res[row] = fi[jeq] # implicit form
+            res[row1:row_f] = f(t_theta, x[i], u_theta_i, dudt_i, dudx_i, d2udx2_i) # implicit form
 
-        hf = self.x[1]-self.x[0]
-        hb = self.x[-1]-self.x[-2]
-        for j in range(neq):
-
-            res[j] = self.left_boundary_condition(u, j, hf)
-
-            row = (nnodes-1)*neq+j
-            res[row] = self.right_boundary_condition(u, j, hb)
+        res[:neq] = self.left_bc_residual(u, t)
+        res[-neq:] = self.right_bc_residual(u, t)
 
         return res
 
-    def left_boundary_condition(self, u: np.ndarray[tuple[int]],
-        ieq: int, hf: float) -> float:
+    def left_bc_residual(self, u: np.ndarray[tuple[int]],
+        t: float) -> np.ndarray[tuple[int]]:
         """Returns the residual on the left boundary of a 1D domain.
 
         Args:
             u: the vector of unknowns
-            ieq: the equation on which the boundary condition is applied
-            hf: the distance between the first two points of the domain (for derivative BCs)
         Returns:
             The residual on the left boundary after applying the boundary condition."""
 
+        x = self.x
         bc = self.bc['left']
 
-        neq = self.neq
+        nnodes, nunknowns = x.shape[0], u.shape[0]
+        neq = round(nunknowns/nnodes)
 
-        res_bc = 0.0
+        hf = x[1]-x[0]
+        h2f = x[2] - x[1]
+        o1_h2_f_i = -(2*hf+h2f)/(hf*(hf+h2f)) # 1st order (h2) forward, ui
+        o1_h2_f_b = (hf+h2f)/(hf*h2f)         # 1st order (h2) forward, uf
+        o1_h2_f_2b = -hf/(h2f*(hf+h2f))       # 1st order (h2) forward, u2f
 
-        node1, node2 = ieq, ieq+neq
+        u_b = u[0:neq]
+        uf_b = u[neq:2*neq]
+        u2f_b = u[2*neq:3*neq]
 
-        bc_type = bc['type']
-        val = bc['value'][ieq]
+        # dudx_b = (uf_b - u_b)/hf
+        # dudx_b = (-u2f_b+4.0*uf_b-3.0*u_b)/(2.0*hf)
+        dudx_b = o1_h2_f_i*u_b + o1_h2_f_b*uf_b + o1_h2_f_2b*u2f_b
 
-        if bc_type == 'dirichlet':
-            res_bc = u[node1] - val
-        elif bc_type == 'neumann':
-            res_bc = (u[node2] - u[node1])/hf - val
-        elif bc_type == 'robin':
-            a0 = bc.get('a_robin', [0.0]*neq)[ieq]
-            res_bc = (u[node2] - u[node1])/hf +a0*u[node1] - val
+        return bc(t, x[0], u_b, dudx_b)
 
-        return res_bc
-
-    def right_boundary_condition(self, u: np.ndarray[tuple[int]],
-        ieq: int, hb: float) -> float:
+    def right_bc_residual(self, u: np.ndarray[tuple[int]],
+        t: float) -> np.ndarray[tuple[int]]:
         """Returns the residual on the right boundary of a 1D domain.
 
         Args:
             u: the vector of unknowns
-            ieq: the equation on which the boundary condition is applied
-            hf: the distance between the first two points of the domain (for derivative BCs)
         Returns:
             The residual on the right boundary after applying the boundary condition."""
 
+        x = self.x
         bc = self.bc['right']
 
-        neq = self.neq
+        nnodes, nunknowns = x.shape[0], u.shape[0]
+        neq = round(nunknowns/nnodes)
 
-        nunknowns = u.shape[0]
+        hb = x[-1]-x[-2]
+        h2b = x[-2] - x[-3]
+        o1_h2_b_i = (2*hb+h2b)/(hb*(hb+h2b)) # 1st order (h2) backward, ui
+        o1_h2_b_b = -(hb+h2b)/(hb*h2b)       # 1st order (h2) backward, ub
+        o1_h2_b_2b = hb/(h2b*(hb+h2b))       # 1st order (h2) backward, u2b
 
-        node1 = nunknowns-neq+ieq
-        node2 = node1-neq
+        ub = u[nunknowns-neq:]
+        ub_b = u[nunknowns-2*neq:nunknowns-neq]
+        ub_2b = u[nunknowns-3*neq:nunknowns-2*neq]
 
-        res_bc = 0.0
+        # dudx_b = (ub - ub_b)/hb
+        # dudx_b = (3.0*ub - 4.0*ub_b + ub_2b)/(2.0*hb)
+        dudx_b = o1_h2_b_i*ub + o1_h2_b_b*ub_b + o1_h2_b_2b*ub_2b
 
-        bc_type = bc['type']
-        val = bc['value'][ieq]
-
-        if bc_type == 'dirichlet':
-            res_bc = u[node1] - val
-        elif bc_type == 'neumann':
-            res_bc = (u[node1] - u[node2])/hb - val
-        elif bc_type == 'robin':
-            an = bc.get('a_robin', [0.0]*neq)[ieq]
-            res_bc = (u[node1] - u[node2])/hb +an*u[node1] - val
-
-        return res_bc
+        return bc(t, x[-1], ub, dudx_b)
 
     def jacobian(self, u: np.ndarray[tuple[int]], res: np.ndarray[tuple[int]],
         h: float = 1e-8) -> np.ndarray[tuple[int, int]]:
 
         return super().jacobian(u, res, h)
-
-
-class PDESystem(NonlinearProblem):
-
-    def __init__(self, h, conductivity):
-        self.h = h
-        self.k = conductivity
-
-    def f_res(self, u):
-        return (u**2)/self.h + self.k

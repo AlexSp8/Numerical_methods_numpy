@@ -1,15 +1,22 @@
 
+import sys
 from pathlib import Path
 
 import numpy as np
 import numpy.typing as npt
+
+current_dir = Path(__file__).resolve().parent
+parent_dir = current_dir.parent
+
+if str(parent_dir) not in sys.path:
+    sys.path.insert(0, str(parent_dir))
 
 from differentiation import forward_fd as ffd, backward_fd as bfd
 from differentiation import central_fd as cfd, function_differentiation
 from differentiation import data_differentiation, partial_derivatives
 
 # Path to the Datasets directory
-DATASETS_DIR = Path(__file__).parent / 'integration/data'
+DATASETS_DIR = parent_dir/'integration/data'
 
 def f(x: float) -> float:
     return 1.2 - 0.25*x - 0.5*(x**2) - 0.15*(x**3) - 0.1*(x**4)

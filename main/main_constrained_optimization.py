@@ -1,6 +1,15 @@
 
+import sys
+from pathlib import Path
+
 import numpy as np
 import numpy.typing as npt
+
+current_dir = Path(__file__).resolve().parent
+parent_dir = current_dir.parent
+
+if str(parent_dir) not in sys.path:
+    sys.path.insert(0, str(parent_dir))
 
 from optimization.constrained import equality_constraints
 from differentiation import forward_fd as ffd

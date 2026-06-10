@@ -1,6 +1,15 @@
 
 from typing import Callable
+import sys
+from pathlib import Path
+
 import numpy as np
+
+current_dir = Path(__file__).resolve().parent
+parent_dir = current_dir.parent
+
+if str(parent_dir) not in sys.path:
+    sys.path.insert(0, str(parent_dir))
 
 from optimization.one_dimensional import bracketing, open_methods, hybrid
 from differentiation import forward_fd as ffd

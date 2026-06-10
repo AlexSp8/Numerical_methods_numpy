@@ -1,6 +1,14 @@
 
-import math
+import sys
+from pathlib import Path
+
 import numpy as np
+
+current_dir = Path(__file__).resolve().parent
+parent_dir = current_dir.parent
+
+if str(parent_dir) not in sys.path:
+    sys.path.insert(0, str(parent_dir))
 
 from non_linear_systems import newton_solver, non_linear_problem
 from linear_systems import direct_solver
@@ -11,7 +19,7 @@ def F(x: np.ndarray[tuple[int], np.dtype[np.float64]]
 
     return np.array([
         x[0]**2 + x[1]**2 - 4,
-        math.exp(x[0]) + x[1] - 1
+        np.exp(x[0]) + x[1] - 1
     ])
 
 def non_linear_systems():
