@@ -17,6 +17,7 @@ class NewtonSolver:
         self.tol = tol
         self.r = r
         self.is_full = True
+        self.jac = None
 
     def update_guess(self, u0: np.ndarray[tuple[int]]):
 
@@ -63,21 +64,21 @@ class NewtonSolver:
 
         res = np.zeros(neq)
 
-        jac = np.zeros((neq,n))
-
         is_full = self.is_full
-        is_full = True
+        if self.jac is None:
+            self.jac = np.zeros((neq,n))
+            is_full = True
 
         for k in range(1, self.k_max+1):
 
             res = problem.f_res(u)
 
             if is_full:
-                jac = problem.jacobian(u, res)
+                self.jac = problem.jacobian(u, res)
                 # for i in range(n):
                 #     print(" ".join(f"{x:.2e}" for x in jac[i, :]))
 
-            du = solver.solve(jac, -res)
+            du = solver.solve(self.jac, -res)
             # solver.x0 = du
 
             cor_norm, res_norm = self.get_norms(du, res)
@@ -85,16 +86,25 @@ class NewtonSolver:
                 print(f'k = {k}, Res Norm: {res_norm:.4e}, Cor Norm: {cor_norm:.4e}')
                 # print(matrix_operations.condition_number(jac))
 
+            if k == 1:
+                cor_norm0 = cor_norm
+
             if (res_norm < self.tol) and (cor_norm < self.tol):
-                return u
+                break
 
             if cor_norm < np.sqrt(self.tol):
                 is_full = False
+            else:
+                is_full = True
 
             u = u + self.r*du
 
-        print(f"Warning: Newton maximum iterations ({self.k_max}) reached without converging.")
+        if k >= self.k_max:
+            print(f"Warning: Newton maximum iterations ({k}) reached without converging.")
 
+        if cor_norm0 < np.sqrt(self.tol):
+            self.is_full = False
+    
         return u
 
 class LevenbergMarquardtSolver(NewtonSolver):

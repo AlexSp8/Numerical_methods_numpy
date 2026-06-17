@@ -5,7 +5,7 @@ import numpy as np
 
 from linear_systems import direct_solver
 from non_linear_systems import newton_solver
-from non_linear_systems.non_linear_problem import TransientBVP1DFD
+from non_linear_systems.non_linear_problem import FiniteDifferencesBVP1D
 from ode.time_integration import TimeIntegration
 
 def create_mesh(nnodes: int, xd: np.ndarray[tuple[int]],
@@ -68,6 +68,6 @@ def solve_bvp_1d_fd(
 
     t0, tf, dt0, dt_min, dt_max, atol, rtol = 0.0, 0.0, float('inf'), float('inf'), float('inf'), 0.0, 0.0
     time_int = TimeIntegration(t0, tf, dt0, dt_min, dt_max, atol, rtol, u0)
-    problem = TransientBVP1DFD(f=f, x=x, bc=bc, time_int=time_int)
+    problem = FiniteDifferencesBVP1D(f=f, neq=neq, x=x, bc=bc, time_int=time_int)
 
     return nr_solver.solve(problem, output=True)

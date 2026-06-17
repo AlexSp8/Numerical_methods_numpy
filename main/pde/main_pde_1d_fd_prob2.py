@@ -12,7 +12,7 @@ if str(parent_dir) not in sys.path:
 
 from linear_systems import direct_solver
 from ode import plot
-from pde import bvp_fd
+from pde import bvp_setup
 
 # Time-dependent BCs
 def bc_left(t: float, x_b: float, u_b: np.ndarray[tuple[int]],
@@ -45,7 +45,7 @@ def main():
 
     neq = 1
     
-    bvp_solver = bvp_fd.BVPSolver()
+    bvp_solver = bvp_setup.BVPSetupFD(neq)
 
     xd = np.array([0.0, 2.0])
     bvp_solver.create_mesh(nnodes=31, xd=xd, p=1.0)
@@ -69,7 +69,7 @@ def main():
 
     bc = {'left': bc_left, 'right': bc_right}
 
-    bvp_solver.set_problem(f_res, bc)
+    bvp_solver.set_fd_problem(f_res, bc)
 
     u = bvp_solver.solve(dtw=1.0)
 

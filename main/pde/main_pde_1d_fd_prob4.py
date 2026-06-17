@@ -12,7 +12,7 @@ if str(parent_dir) not in sys.path:
 
 from linear_systems import direct_solver
 from ode import plot
-from pde import bvp_fd
+from pde import bvp_setup
 
 # Problem 4
 def bc_left(t: float, x: float, u: np.ndarray[tuple[int]], dudx: np.ndarray[tuple[int]]
@@ -64,7 +64,7 @@ def main():
     
     neq = 2
     
-    bvp_solver = bvp_fd.BVPSolver()
+    bvp_solver = bvp_setup.BVPSetupFD(neq)
 
     xd = np.array([0.0, np.pi/2])
     bvp_solver.create_mesh(nnodes=11, xd=xd, p=1.0)
@@ -88,7 +88,7 @@ def main():
 
     bc = {'left': bc_left, 'right': bc_right}
 
-    bvp_solver.set_problem(f_res, bc, theta=1.0)
+    bvp_solver.set_fd_problem(f_res, bc, theta=1.0)
 
     u = bvp_solver.solve(dtw=0.2)
 
