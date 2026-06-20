@@ -1,4 +1,5 @@
 
+import time
 import numpy as np
 import scipy
 
@@ -71,6 +72,8 @@ class NewtonSolver:
 
         for k in range(1, self.k_max+1):
 
+            t_start = time.perf_counter()
+
             res = problem.f_res(u)
 
             if is_full:
@@ -82,8 +85,10 @@ class NewtonSolver:
             # solver.x0 = du
 
             cor_norm, res_norm = self.get_norms(du, res)
+            t_end = time.perf_counter()
             if output:
-                print(f'k = {k}, Res Norm: {res_norm:.4e}, Cor Norm: {cor_norm:.4e}')
+                dt = t_end - t_start
+                print(f'k = {k}, Res Norm: {res_norm:.4e}, Cor Norm: {cor_norm:.4e}, Time = {dt:.2f} s')
                 # print(matrix_operations.condition_number(jac))
 
             if k == 1:

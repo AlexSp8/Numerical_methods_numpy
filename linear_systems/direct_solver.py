@@ -1,6 +1,7 @@
 
 import numpy as np
-import scipy
+from scipy.sparse import csr_matrix
+from scipy.sparse.linalg import spsolve
 
 from utilities import matrix_operations
 from linear_systems.linear_solver import LinearSolver
@@ -9,6 +10,17 @@ class DirectSolver(LinearSolver):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+class SparseSolver(DirectSolver):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def solve(self, A: np.ndarray[tuple[int, int], np.dtype[np.float64]],
+        b: np.ndarray[tuple[int], np.dtype[np.float64]]
+        ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+        A_sparse = csr_matrix(A)
+        return spsolve(A_sparse, b)
 
 
 class LUSolver(DirectSolver):

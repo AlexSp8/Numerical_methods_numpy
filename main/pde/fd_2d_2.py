@@ -11,59 +11,53 @@ if str(parent_dir) not in sys.path:
     sys.path.insert(0, str(parent_dir))
 
 from linear_systems import direct_solver
-from pde import bvp_setup, mesh_discretization, plot_pde
+from pde import bvp_setup, mesh_discretization, plot_pde, boundary_conditions
 
-# Heat Transfer
+# Conflicting corner BCs
 def bc_x0(t: float, x: np.ndarray[tuple[int]], u: np.ndarray[tuple[int]],
-    grad_u: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
+    grad_u: np.ndarray[tuple[int, int]]) -> np.ndarray[tuple[int]]:
     neq = u.shape[0]
     res = np.zeros(neq)
     res[0] = u[0] - 0.0
     return res
 
 def bc_xf(t: float, x: np.ndarray[tuple[int]], u: np.ndarray[tuple[int]],
-    grad_u: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
+    grad_u: np.ndarray[tuple[int, int]]) -> np.ndarray[tuple[int]]:
     neq = u.shape[0]
     res = np.zeros(neq)
     res[0] = u[0] - 0.0
     return res
 
 def bc_y0(t: float, x: np.ndarray[tuple[int]], u: np.ndarray[tuple[int]],
-    grad_u: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
+    grad_u: np.ndarray[tuple[int, int]]) -> np.ndarray[tuple[int]]:
     neq = u.shape[0]
     res = np.zeros(neq)
     res[0] = u[0] - 0.0
     return res
 
 def bc_yf(t: float, x: np.ndarray[tuple[int]], u: np.ndarray[tuple[int]],
-    grad_u: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
+    grad_u: np.ndarray[tuple[int, int]]) -> np.ndarray[tuple[int]]:
     neq = u.shape[0]
     res = np.zeros(neq)
     res[0] = u[0] - 1.0
     return res
 
-def initial_condition(t0: float, x: np.ndarray[tuple[int]], neq: int
+def initial_condition(t0: float, x: np.ndarray[tuple[int, int]], neq: int
     ) -> np.ndarray[tuple[int]]:
-
     nnodes = x.shape[0]
-
     u0 = np.zeros(nnodes*neq)
-
-    ieq = 0
-    u0[ieq::neq] = 0.0 # x
-
     return u0
 
 def f_res(t: float, x: np.ndarray[tuple[int]], u: np.ndarray[tuple[int]],
-    dudt: np.ndarray[tuple[int]], grad_u: np.ndarray[tuple[int]],
-    hess_u: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
+    dudt: np.ndarray[tuple[int]], grad_u: np.ndarray[tuple[int, int]],
+    hess_u: np.ndarray[tuple[int, int, int]]) -> np.ndarray[tuple[int]]:
     neq = u.shape[0]
     res = np.zeros(neq)
     d2udx2, d2udy2 = hess_u[0,0,0], hess_u[1,1,0]
     res[0] = (d2udx2+ d2udy2)
     return res
 
-def u_analytical(t: float, x: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
+def u_analytical(t: float, x: np.ndarray[tuple[int, int]]) -> np.ndarray[tuple[int]]:
 
     xi = x[:, 0]
     yi = x[:, 1]
@@ -90,9 +84,10 @@ def main():
     p = np.array([1, 1])
     mesh.set_rectangular_mesh(p, major_order='row')
 
-    bc = [[bc_x0, bc_y0], [bc_xf, bc_yf]]
+    bc = [bc_x0, bc_xf, bc_y0, bc_yf]
+    boundary = boundary_conditions.BoundaryConditions(neq, bc)
 
-    bvp_solver = bvp_setup.BVPSetupFD(neq, mesh, bc, f_res)
+    bvp_solver = bvp_setup.BVPSetupFD(neq, mesh, boundary, f_res)
     
     ls_solver = direct_solver.LUSolver()
     bvp_solver.set_ls_solver(ls_solver)
@@ -108,7 +103,7 @@ def main():
 
     bvp_solver.set_fd_problem(theta=1.0)
 
-    u = bvp_solver.solve(dtw=100.0)
+    u = bvp_solver.solve(dtw=tf)
 
     x = mesh.x_mesh
     u_exact = u_analytical(tf, x)

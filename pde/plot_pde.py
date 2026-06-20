@@ -28,7 +28,7 @@ def plot_contour(mesh, u: np.ndarray[tuple[int]],
     U_err = griddata((x_coords, y_coords), abs_error, (X, Y), method='cubic')
     
     # 5. Initialize the matplotlib figure
-    fig, axes = plt.subplots(1, 3, figsize=(18, 5), sharey=True)
+    fig, axes = plt.subplots(1, 3, figsize=(12, 5), sharey=True)
     
     # --- Plot 1: Numerical Solution ---
     contour1 = axes[0].contourf(X, Y, U_num, levels=10, cmap='plasma')
@@ -54,4 +54,41 @@ def plot_contour(mesh, u: np.ndarray[tuple[int]],
     # axes[0].scatter(x_coords, y_coords, color='white', s=1, alpha=0.3)
     
     plt.tight_layout()
+    plt.show()
+
+def plot_3d_volume(mesh, u_numerical, u_analytical):
+
+    fig, axes = plt.subplots(1, 3, figsize=(12, 5), subplot_kw={'projection': '3d'})
+    
+    # Extract structural spatial trajectories
+    xm = mesh.x_mesh[:, 0]
+    ym = mesh.x_mesh[:, 1]
+    zm = mesh.x_mesh[:, 2]
+    
+    # Draw every node as a colored sphere
+    sc = axes[0].scatter(xm, ym, zm, c=u_numerical, cmap='jet', s=60, edgecolors='black', alpha=0.8)
+    
+    fig.colorbar(sc, ax=axes[0], label='u_numerical')
+    axes[0].set_title("3D Field Distribution Vector")
+    axes[0].set_xlabel('X Axis')
+    axes[0].set_ylabel('Y Axis')
+    axes[0].set_zlabel('Z Axis')
+    
+    sc2 = axes[1].scatter(xm, ym, zm, c=u_analytical, cmap='jet', s=60, edgecolors='black', alpha=0.8)
+    
+    fig.colorbar(sc2, ax=axes[1], label='u_analytical')
+    axes[1].set_title("3D Field Distribution Vector")
+    axes[1].set_xlabel('X Axis')
+    axes[1].set_ylabel('Y Axis')
+    axes[1].set_zlabel('Z Axis')
+    
+    du = np.abs(u_numerical-u_analytical)
+    sc3 = axes[2].scatter(xm, ym, zm, c=du, cmap='jet', s=60, edgecolors='black', alpha=0.8)
+    
+    fig.colorbar(sc3, ax=axes[2], label='Error')
+    axes[2].set_title("3D Field Distribution Vector")
+    axes[2].set_xlabel('X Axis')
+    axes[2].set_ylabel('Y Axis')
+    axes[2].set_zlabel('Z Axis')
+    
     plt.show()

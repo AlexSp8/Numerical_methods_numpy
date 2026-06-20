@@ -6,7 +6,8 @@ class MeshDiscretization():
     def __init__(self, x0: np.ndarray[tuple[int]], xf: np.ndarray[tuple[int]],
                 nodes_dim: np.ndarray[tuple[int]] = None,
                 x_mesh: np.ndarray[tuple[int, int]] = None,
-                connectivity: np.ndarray[tuple[int, int]] = None):
+                connectivity: np.ndarray[tuple[int, int]] = None,
+                boundary_nodes: np.ndarray[tuple[int]] = None):
         
         self.x0 = np.array(x0, dtype=float)
         self.xf = np.array(xf, dtype=float)
@@ -30,6 +31,8 @@ class MeshDiscretization():
         
         self.connectivity = connectivity
 
+        self.boundary_nodes = boundary_nodes
+
     def read_mesh(self):
         pass
 
@@ -41,10 +44,11 @@ class MeshDiscretization():
 
         self.x_mesh = self.create_rectangular_mesh(p, major_order)
         self.connectivity = self.structured_connectivity(major_order)
+        self.bulk_nodes, self.boundary_nodes, self.multi_boundary_nodes = self.classify_nodes()
 
     def create_rectangular_mesh(self, p: np.ndarray[tuple[int]] = None,
         major_order: str = 'row'):
-        """Sets the mesh coordinates and connectivity for a rectangular mesh
+        """Sets the mesh coordinates for a rectangular mesh
         given the stretching factor for refinement in each direction
         and the order of node enumeration.
 
@@ -53,8 +57,9 @@ class MeshDiscretization():
             p (optional): the power law refinement factor.
                 For p > 1: refinement towards x0.
                 For 0 < p < 1: refinement towards xf
+            major_order (optional): the order of enumeration
         Returns:
-            The arrays of mesh coordinates and connectivity."""
+            The arrays of mesh coordinates."""
 
         ndim = self.ndim
 
@@ -113,17 +118,14 @@ class MeshDiscretization():
         return x
     
     def structured_connectivity(self, major_order: str):
-        """Sets the mesh coordinates and connectivity for a rectangular mesh
-        given the stretching factor for refinement in each direction
-        and the order of node enumeration.
+        """Sets the connectivity for a rectangular mesh
+        given the order of node enumeration.
 
         Args:
-            self: the MeshDiscretization object that holds (x0, xf, ndim)
-            p (optional): the power law refinement factor.
-                For p > 1: refinement towards x0.
-                For 0 < p < 1: refinement towards xf
+            self: the MeshDiscretization object that holds (ndim, nodes_dim, nodes_total)
+            major_order (optional): the order of enumeration
         Returns:
-            The arrays of mesh coordinates and connectivity."""
+            The connectivity array."""
 
         ndim = self.ndim
         nodes_dim = self.nodes_dim
@@ -162,6 +164,45 @@ class MeshDiscretization():
                     connectivity[inod, d, 1] = inod + node_step[d]
 
         return connectivity
+    
+    def classify_nodes(self):
+        """Classifies the nodes for a rectangular mesh (bulk, boundary, multi-boundary).
+
+        Args:
+            self: the MeshDiscretization object that holds (nodes_total, ndim, connectivity)
+        Returns:
+            A tuple of arrays for each type of node."""
+
+        nodes_total = self.nodes_total
+        ndim = self.ndim
+        connectivity = self.connectivity
+
+        bulk_nodes = []
+        boundary_nodes = []
+        # boundary_nodes = np.full((nodes_total,ndim), fill_value=-1, dtype=int)
+        multi_boundary_nodes = []
+        
+        for i in range(nodes_total):
+
+            bnd_count = 0
+            boundaries = []
+            # the highest dimension index dominates corners
+            for d in range(ndim):
+                for j in range(connectivity.shape[2]):
+                    if connectivity[i, d, j] == -1:
+                        bnd_count += 1
+                        bnd = 2*d+j
+                        boundaries.append(bnd)
+                        break
+
+            if bnd_count == 0:
+                bulk_nodes.append(i)
+            elif bnd_count == 1:
+                boundary_nodes.append((i, boundaries))
+            else:
+                multi_boundary_nodes.append((i, boundaries))
+
+        return bulk_nodes, boundary_nodes, multi_boundary_nodes
     
     def check_dt(self, D0: float, v0: float, dt0: float) -> float:
         """Checks if the time discretization is stable.

@@ -12,25 +12,25 @@ if str(parent_dir) not in sys.path:
 
 from linear_systems import direct_solver
 from ode import plot
-from pde import bvp_setup
+from pde import bvp_setup, mesh_discretization, boundary_conditions
 
 # Heat Transfer
-def bc_left(t: float, x_b: float, u_b: np.ndarray[tuple[int]],
-    dudx_b: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
-    neq = u_b.shape[0]
+def bc_x0(t: float, x: float, u: np.ndarray[tuple[int]],
+    grad_u: np.ndarray[tuple[int, int]]) -> np.ndarray[tuple[int]]:
+    neq = u.shape[0]
     res = np.zeros(neq)
-    res[0] = u_b[0] - 40.0
+    res[0] = u[0] - 40.0
     return res
 
-def bc_right(t: float, x_b: float, u_b: np.ndarray[tuple[int]],
-    dudx_b: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
-    neq = u_b.shape[0]
+def bc_xf(t: float, x: float, u: np.ndarray[tuple[int]],
+    grad_u: np.ndarray[tuple[int, int]]) -> np.ndarray[tuple[int]]:
+    neq = u.shape[0]
     res = np.zeros(neq)
-    res[0] = u_b[0]- 200.0
-    # res[0] = dudx_b[0]- 0.0
+    res[0] = u[0]- 200.0
+    # res[0] = grad_u[0,0]- 0.0
     return res
 
-def initial_condition(t0: float, x: np.ndarray[tuple[int]], neq: int
+def initial_condition(t0: float, x: np.ndarray[tuple[int, int]], neq: int
     ) -> np.ndarray[tuple[int]]:
 
     nnodes = x.shape[0]
@@ -51,17 +51,23 @@ def initial_condition(t0: float, x: np.ndarray[tuple[int]], neq: int
 
     return u0
 
-def f_res(t: float, x: float, u: np.ndarray[tuple[int]], dudt: np.ndarray[tuple[int]],
-    dudx: np.ndarray[tuple[int]], d2udx2: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
-    T = u[0]
+def f_res(t: float, x: np.ndarray[tuple[int]], u: np.ndarray[tuple[int]],
+    dudt: np.ndarray[tuple[int]], grad_u: np.ndarray[tuple[int, int]],
+    hess_u: np.ndarray[tuple[int, int, int]]) -> np.ndarray[tuple[int]]:
+    neq = u.shape[0]
+    res = np.zeros(neq)
+    d2udx2 = hess_u[0,0,0]
     h, Ta = 0.01, 20.0
-    return dudt - (d2udx2 + h*(Ta-T))
+    res[0] = (d2udx2 + h*(Ta-u[0]))
+    return res
 
-def u_analytical(t: float, x: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
+def u_analytical(t: float, x: np.ndarray[tuple[int, int]]) -> np.ndarray[tuple[int]]:
+
+    xm = x[:,0]
 
     Ta, L = 20.0, 10.0
     c = (180-20*np.cosh(0.1*L))/np.sinh(0.1*L)
-    T_ss = Ta*np.cosh(0.1*x) + c*np.sinh(0.1*x) + Ta
+    T_ss = Ta*np.cosh(0.1*xm) + c*np.sinh(0.1*xm) + Ta
     n_tot = 5
     L2 = L**2
     T_tot = T_ss
@@ -70,41 +76,45 @@ def u_analytical(t: float, x: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
         c1 = 2.0/(n_p*(0.01*L2+n_p**2))
         c2 = ((-1)**n)*(0.2*L2+200*(n_p)**2) - (0.2*L2+40*n_p)
         an = c1*c2
-        T_tot += an*np.sin(n_p*x/L)*np.exp(-(n_p**2+1)*t/L2)
+        T_tot += an*np.sin(n_p*xm/L)*np.exp(-(n_p**2+1)*t/L2)
     return T_tot
 
 def main():
 
     neq = 1
 
-    bvp_solver = bvp_setup.BVPSetupFD(neq)
+    x0 = np.array([0.0])
+    xf = np.array([10.0])
+    nodes_dim = np.array([11])
+    
+    mesh = mesh_discretization.MeshDiscretization(x0, xf, nodes_dim)
 
-    xd = np.array([0.0, 10.0])
-    bvp_solver.create_mesh(nnodes=11, xd=xd, p=1.0)
-    x = bvp_solver.x
+    p = np.array([1])
+    mesh.set_rectangular_mesh(p, major_order='row')
 
-    D, v = 1.0, 0.0
+    bc = [bc_x0, bc_xf]
+    boundary = boundary_conditions.BoundaryConditions(neq, bc)
 
-    bvp_solver.check_dx(D, v)
-
+    bvp_solver = bvp_setup.BVPSetupFD(neq, mesh, boundary, f_res)
+    
     ls_solver = direct_solver.LUSolver()
     bvp_solver.set_ls_solver(ls_solver)
 
     t0, tf, dt, dt_min, dt_max, atol, rtol = 0.0, 250.0, 1e-1, 1e-1, 1.0, 1e-3, 1e-2
-    # dt = bvp_solver.check_dt(D, v, dt)
+    dt = tf
     
-    u0 = initial_condition(t0, x, neq)
+    u0 = initial_condition(t0, mesh.x_mesh, neq)
 
     bvp_solver.set_nr_solver(u0, k_max=100, tol=1e-8, r=1.0)
 
     bvp_solver.set_time_int(t0, tf, dt, dt_min, dt_max, atol, rtol, u0)
 
-    bc = {'left': bc_left, 'right': bc_right}
+    bvp_solver.set_fd_problem(theta=1.0)
 
-    bvp_solver.set_fd_problem(f_res, bc, theta=0.0)
+    u = bvp_solver.solve(dtw=tf)
 
-    u = bvp_solver.solve(dtw=100.0)
-
+    x = mesh.x_mesh
+    
     u_exact = u_analytical(tf, x)
     err = np.max(np.abs(u_exact-u))
     print(f'err = {err:.4e}')

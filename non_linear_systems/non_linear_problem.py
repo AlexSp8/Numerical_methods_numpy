@@ -8,6 +8,7 @@ from ode.time_integration import TimeIntegration
 from integration.fe_gauss_integration import FEGaussIntegration
 from pde.fe_stabilization import FEStabilization
 from pde.mesh_discretization import MeshDiscretization
+from pde.boundary_conditions import BoundaryConditions
 
 class NonlinearProblem(ABC):
 
@@ -267,171 +268,6 @@ class AdamsMoultonODE(NonlinearProblem):
         return super().jacobian(u, res, h)
 
 
-class FiniteDifferencesBVP1D(NonlinearProblem):
-
-    def __init__(self, *args, neq: int, x: np.ndarray[tuple[int]], bc: dict[str, Callable],
-        time_int: TimeIntegration, theta: float = 1.0, **kwargs):
-
-        super().__init__(*args, **kwargs)
-        self.neq = neq
-        self.x = x
-        self.bc = bc
-        self.time_int = time_int
-        self.theta = theta
-
-    def f_res(self, u: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
-
-        f = self.f
-        neq = self.neq
-        x = self.x
-        time_int = self.time_int
-        theta = self.theta
-
-        t = time_int.t
-
-        up = time_int.up
-        u2p = time_int.up2
-
-        if time_int.inc == 1:
-            u2p = 2*up - u
-
-        dt = time_int.dt
-        dtp = time_int.dtp
-
-        o1_h2_p_i = (2*dt+dtp)/(dt*(dt+dtp))  # 1st order (h2) backward, ui
-        o1_h2_p_p = -(dt+dtp)/(dt*dtp)        # 1st order (h2) backward, up
-        o1_h2_p_2p = dt/(dtp*(dt+dtp))        # 1st order (h2) backward, u2p
-
-        nnodes, nunknowns = x.shape[0], u.shape[0]
-
-        res = np.zeros(nunknowns)
-
-        for i in range(1, nnodes-1):
-
-            hf = x[i+1] - x[i]
-            hb = x[i] - x[i-1]
-
-            o2_h2_c = 2.0/(hf+hb) # 2nd order (h2) central
-
-            # o1_h2_c = 1.0/(hf*hb*(hf+hb)) # 1st order (h2) central
-
-            # h2b = x[i-1] - x[i-2]
-            # o1_h2_b_i = (2*hb+h2b)/(hb*(hb+h2b)) # 1st order (h2) backward, ui
-            # o1_h2_b_b = -(hb+h2b)/(hb*h2b)       # 1st order (h2) backward, ub
-            # o1_h2_b_2b = hb/(h2b*(hb+h2b))       # 1st order (h2) backward, u2b
-
-            # h2f = x[i+2] - x[i+1]
-            # o1_h2_f_i = -(2*hf+h2f)/(hf*(hf+h2f)) # 1st order (h2) forward, ui
-            # o1_h2_f_f = (hf+h2f)/(hf*h2f)         # 1st order (h2) forward, uf
-            # o1_h2_f_2f = -hf/(h2f*(hf+h2f))       # 1st order (h2) forward, u2f
-
-            row1 = i*neq
-            rowf = row1+neq
-
-            ub_i = u[row1-neq:row1]
-            u_i = u[row1:rowf]
-            uf_i = u[rowf:rowf+neq]
-
-            up_i = up[row1:rowf]
-            u2p_i = u2p[row1:rowf]
-            
-            upb_i = up[row1-neq:row1]
-            upf_i = up[rowf:rowf+neq]
-
-            # dudt_i = (u_i - up_i)/dt # O(h) backward
-            # dudt_i = (3.0*u_i - 4.0*up_i + u2p_i)/(2.0*dt) # O(h2) backward, dt: constant
-            dudt_i = (o1_h2_p_i*u_i + o1_h2_p_p*up_i + o1_h2_p_2p*u2p_i) # O(h2) backward
-
-            dudx_i = (uf_i - u_i)/hf # O(h) forward
-            # dudx_i = (uf_i - ub_i)/(hf+hb) # O(h) central
-            # dudx_i = ((hb**2)*uf_i + (hf**2-hb**2)*u_i + (hf**2)*ub_i)*o1_h2_c # O(h2) central
-            
-            dupdx_i = (upf_i - up_i)/hf # O(h) forward
-            # dupdx_i = (upf_i - upb_i)/(hf+hb) # O(h) central
-            # dupdx_i = ((hb**2)*upf_i + (hf**2-hb**2)*up_i + (hf**2)*upb_i)*o1_h2_c # O(h2) central
-
-            d2udx2_i = ((uf_i-u_i)/hf - (u_i-ub_i)/hb)*o2_h2_c # O(h2) central
-            
-            d2updx2_i = ((upf_i-up_i)/hf - (up_i-upb_i)/hb)*o2_h2_c # O(h2) central
-            
-            t_val = theta*t + (1.0-theta)*(t-dt)
-            u_val = theta*u_i + (1.0-theta)*up_i
-            dudx_val = theta*dudx_i + (1.0-theta)*dupdx_i
-            d2udx2_val = theta*d2udx2_i + (1.0-theta)*d2updx2_i
-
-            res[row1:rowf] = f(t_val, x[i], u_val, dudt_i, dudx_val, d2udx2_val) # implicit form
-
-        res[:neq] = self.left_bc_residual(u, t)
-        res[-neq:] = self.right_bc_residual(u, t)
-
-        return res
-
-    def left_bc_residual(self, u: np.ndarray[tuple[int]],
-        t: float) -> np.ndarray[tuple[int]]:
-        """Returns the residual on the left boundary of a 1D domain.
-
-        Args:
-            u: the vector of unknowns
-        Returns:
-            The residual on the left boundary after applying the boundary condition."""
-
-        neq = self.neq
-        x = self.x
-        bc = self.bc['left']
-
-        hf = x[1]-x[0]
-        h2f = x[2] - x[1]
-        o1_h2_f_i = -(2*hf+h2f)/(hf*(hf+h2f)) # 1st order (h2) forward, ui
-        o1_h2_f_b = (hf+h2f)/(hf*h2f)         # 1st order (h2) forward, uf
-        o1_h2_f_2b = -hf/(h2f*(hf+h2f))       # 1st order (h2) forward, u2f
-
-        u_b = u[0:neq]
-        uf_b = u[neq:2*neq]
-        u2f_b = u[2*neq:3*neq]
-
-        # dudx_b = (uf_b - u_b)/hf
-        # dudx_b = (-u2f_b+4.0*uf_b-3.0*u_b)/(2.0*hf)
-        dudx_b = o1_h2_f_i*u_b + o1_h2_f_b*uf_b + o1_h2_f_2b*u2f_b
-
-        return bc(t, x[0], u_b, dudx_b)
-
-    def right_bc_residual(self, u: np.ndarray[tuple[int]],
-        t: float) -> np.ndarray[tuple[int]]:
-        """Returns the residual on the right boundary of a 1D domain.
-
-        Args:
-            u: the vector of unknowns
-        Returns:
-            The residual on the right boundary after applying the boundary condition."""
-
-        neq = self.neq
-        x = self.x
-        bc = self.bc['right']
-
-        nunknowns = u.shape[0]
-
-        hb = x[-1]-x[-2]
-        h2b = x[-2] - x[-3]
-        o1_h2_b_i = (2*hb+h2b)/(hb*(hb+h2b)) # 1st order (h2) backward, ui
-        o1_h2_b_b = -(hb+h2b)/(hb*h2b)       # 1st order (h2) backward, ub
-        o1_h2_b_2b = hb/(h2b*(hb+h2b))       # 1st order (h2) backward, u2b
-
-        u_b = u[nunknowns-neq:]
-        ub_b = u[nunknowns-2*neq:nunknowns-neq]
-        ub_2b = u[nunknowns-3*neq:nunknowns-2*neq]
-
-        # dudx_b = (u_b - ub_b)/hb
-        # dudx_b = (3.0*u_b - 4.0*ub_b + ub_2b)/(2.0*hb)
-        dudx_b = o1_h2_b_i*u_b + o1_h2_b_b*ub_b + o1_h2_b_2b*ub_2b
-
-        return bc(t, x[-1], u_b, dudx_b)
-
-    def jacobian(self, u: np.ndarray[tuple[int]], res: np.ndarray[tuple[int]],
-        h: float = 1e-8) -> np.ndarray[tuple[int, int]]:
-
-        return super().jacobian(u, res, h)
-
-
 class FiniteElementsBVP1D(NonlinearProblem):
 
     def __init__(self, *args, neq: int, x: np.ndarray[tuple[int]], bc: dict[str, Callable],
@@ -668,13 +504,13 @@ class FiniteElementsBVP1D(NonlinearProblem):
 class FiniteDifferencesBVP(NonlinearProblem):
 
     def __init__(self, *args, neq: int, mesh: MeshDiscretization,
-        bc: list[list[Callable]], time_int: TimeIntegration,
+        boundary: BoundaryConditions, time_int: TimeIntegration,
         theta: float = 1.0, **kwargs):
 
         super().__init__(*args, **kwargs)
         self.neq = neq
         self.mesh = mesh
-        self.bc = bc
+        self.boundary = boundary
         self.time_int = time_int
         self.theta = theta
 
@@ -686,56 +522,84 @@ class FiniteDifferencesBVP(NonlinearProblem):
         theta = self.theta
 
         x = self.mesh.x_mesh
-        connectivity = self.mesh.connectivity
-        ndim = self.mesh.ndim
-        nodes_total = self.mesh.nodes_total
 
         dt = self.time_int.dt
         t = self.time_int.t
         up = self.time_int.up
-            
+
         ti = theta*t + (1.0-theta)*(t-dt)
 
         nunknowns = u.shape[0]
 
         res = np.zeros(nunknowns)
 
-        for i in range(nodes_total):
+        bulk_nodes = self.mesh.bulk_nodes
+        for i in range(len(bulk_nodes)):
 
-            row1 = i*neq
+            gnod = bulk_nodes[i]
+
+            row1 = gnod*neq
             rowf = row1+neq
-
-            # boundary_bcs = []
-            # for d in range(ndim):
-            #     for j in range(connectivity.shape[2]):
-            #         if connectivity[i, d, j] == -1:
-            #             boundary_bcs.append((j, d, self.bc[j][d]))
-            #             is_boundary = True
-
-            is_boundary = False
-            # the highest dimension index dominates corners
-            for d in range(ndim):
-                for j in range(connectivity.shape[2]):
-                    if connectivity[i, d, j] == -1:
-                        bc = self.bc[j][d]
-                        res[row1:rowf] = self.bc_residual(u, i, bc)
-                        is_boundary = True
-                        break
-            
-            if is_boundary:
-                continue
 
             ui = u[row1:rowf]
             ui_p = up[row1:rowf]
             u_val = theta*ui + (1.0-theta)*ui_p
-            
-            dudt, grad_u, hess_u = self.calculate_derivatives(u, i)
 
-            res[row1:rowf] = f(ti, x[i], u_val, dudt, grad_u, hess_u) # implicit form
+            dudt, grad_u, hess_u = self.calculate_derivatives(u, gnod)
+
+            res[row1:rowf] = f(ti, x[gnod], u_val, dudt, grad_u, hess_u)
+
+        bc = self.boundary.bc
+
+        boundary_nodes = self.mesh.boundary_nodes
+        for i in range(len(boundary_nodes)):
+
+            gnod, bnds = boundary_nodes[i]
+            
+            row1 = gnod*neq
+            rowf = row1+neq
+
+            f_bc = bc[bnds[0]]
+
+            res[row1:rowf] = self.bc_residual(u, gnod, f_bc)
+            
+        is_Dirichlet = self.boundary.is_Dirichlet
+        multi_boundary_nodes = self.mesh.multi_boundary_nodes
+        for i in range(len(multi_boundary_nodes)):
+
+            gnod, bnds = multi_boundary_nodes[i]
+            
+            row1 = gnod*neq
+            rowf = row1+neq
+
+            node_res = np.zeros(neq)
+            
+            for ieq in range(neq):
+
+                dirichlet_res = []
+                flux_res = []
+
+                for j in range(len(bnds)):
+                    bnd = bnds[j]
+                    f_bc = bc[bnd]
+                    res_bc = self.bc_residual(u, gnod, f_bc)
+                    
+                    if is_Dirichlet[bnd, ieq]:
+                        dirichlet_res.append(res_bc[ieq])
+                    else:
+                        flux_res.append(res_bc[ieq])
+
+                if len(dirichlet_res) > 0:
+                    node_res[ieq] = sum(dirichlet_res)/len(dirichlet_res)
+                else:
+                    node_res[ieq] = sum(flux_res)/len(flux_res)
+                    # node_res[ieq] = flux_res[0]
+
+            res[row1:rowf] = node_res
 
         return res
     
-    def calculate_derivatives(self, u: np.ndarray[tuple[int]], i: int):
+    def calculate_derivatives(self, u: np.ndarray[tuple[int]], gnod: int):
 
         neq = self.neq
         theta = self.theta
@@ -748,14 +612,14 @@ class FiniteDifferencesBVP(NonlinearProblem):
         connectivity = self.mesh.connectivity
         ndim = self.mesh.ndim
         
-        row1 = i*neq
+        row1 = gnod*neq
         rowf = row1+neq
         
         ui = u[row1:rowf]
         ui_p = up[row1:rowf]
         ui_2p = self.time_int.up2[row1:rowf]
         if self.time_int.inc == 1:
-            ui_2p = 2*up - u
+            ui_2p = 2*ui_p - ui
         
         o1_h2_p_i = (2*dt+dtp)/(dt*(dt+dtp))  # 1st order (h2) backward, ui
         o1_h2_p_p = -(dt+dtp)/(dt*dtp)        # 1st order (h2) backward, up
@@ -770,10 +634,10 @@ class FiniteDifferencesBVP(NonlinearProblem):
         
         for d in range(ndim):
         
-            idx_b, idx_f = connectivity[i,d,0], connectivity[i,d,1]
+            idx_b, idx_f = connectivity[gnod,d,0], connectivity[gnod,d,1]
 
-            hf = x[idx_f,d] - x[i,d]
-            hb = x[i,d] - x[idx_b,d]
+            hf = x[idx_f,d] - x[gnod,d]
+            hb = x[gnod,d] - x[idx_b,d]
 
             ub = u[idx_b*neq : idx_b*neq + neq]
             uf = u[idx_f*neq : idx_f*neq + neq]
@@ -819,10 +683,10 @@ class FiniteDifferencesBVP(NonlinearProblem):
             
             for dj in range(d+1,ndim):
 
-                idx_b_j, idx_f_j = connectivity[i,dj,0], connectivity[i,dj,1]
+                idx_b_j, idx_f_j = connectivity[gnod,dj,0], connectivity[gnod,dj,1]
 
-                hf_j = x[idx_f_j,dj] - x[i,dj]
-                hb_j = x[i,dj] - x[idx_b_j,dj]
+                hf_j = x[idx_f_j,dj] - x[gnod,dj]
+                hb_j = x[gnod,dj] - x[idx_b_j,dj]
 
                 idx_ff = connectivity[idx_f, dj, 1]
                 uff = u[idx_ff*neq : idx_ff*neq + neq]
