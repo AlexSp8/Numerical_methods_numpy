@@ -11,10 +11,10 @@ class FiniteDifferencesMOL1D():
     and solving a system of ODEs, dudt = f(t,x,u,u',u"), involving all the unknowns."""
 
     def __init__(self,
-        f: Callable[[float, float, np.ndarray[tuple[int]],
-                     np.ndarray[tuple[int]], np.ndarray[tuple[int]]],
-                     np.ndarray[tuple[int]]],
-        x: np.ndarray[tuple[int]], neq: int, bc: dict[str, Callable]):
+        f: Callable[[float, float, NDArray[np.float64],
+                     NDArray[np.float64], NDArray[np.float64]],
+                     NDArray[np.float64]],
+        x: NDArray[np.float64], neq: int, bc: dict[str, Callable]):
 
         self.f = f
         self.x = x
@@ -62,7 +62,7 @@ class FiniteDifferencesMOL1D():
 
         return is_Dirichlet_left, is_Dirichlet_right
 
-    def g(self, t: float, u: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
+    def g(self, t: float, u: NDArray[np.float64]) -> NDArray[np.float64]:
         """Returns the right hand side of the parabolic problem
         dudt = f(t, x, u, dudx, d2udx2) at time t.
 
@@ -109,7 +109,7 @@ class FiniteDifferencesMOL1D():
 
         return dudt
 
-    def left_bc_residual(self, t: float, u: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
+    def left_bc_residual(self, t: float, u: NDArray[np.float64]) -> NDArray[np.float64]:
         """Returns the time derivatives on the left boundary of a 1D domain.
 
         Args:
@@ -182,7 +182,7 @@ class FiniteDifferencesMOL1D():
 
         return dudt_b
 
-    def right_bc_residual(self, t: float, u: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
+    def right_bc_residual(self, t: float, u: NDArray[np.float64]) -> NDArray[np.float64]:
         """Returns the time derivatives on the right boundary of a 1D domain.
 
         Args:

@@ -9,7 +9,7 @@ from linear_systems.linear_solver import LinearSolver
 
 class NewtonSolver:
 
-    def __init__(self, ls_solver: LinearSolver, u0: np.ndarray[tuple[int]],
+    def __init__(self, ls_solver: LinearSolver, u0: NDArray[np.float64],
         k_max: int = 1000, tol: float = 1e-8, r: float = 1.0):
 
         self.ls_solver = ls_solver
@@ -20,11 +20,11 @@ class NewtonSolver:
         self.is_full = True
         self.jac = None
 
-    def update_guess(self, u0: np.ndarray[tuple[int]]):
+    def update_guess(self, u0: NDArray[np.float64]):
 
         self.u0 = u0
 
-    def get_norms(self, du: np.ndarray[tuple[int]], res: np.ndarray[tuple[int]]
+    def get_norms(self, du: NDArray[np.float64], res: NDArray[np.float64]
         ) -> tuple[float, float]:
         """Returns the norms of the correction and residual vectors.
 
@@ -40,7 +40,7 @@ class NewtonSolver:
         return cor_norm, res_norm
 
     def solve(self, problem: NonlinearProblem, output: bool = False,
-        ls_solver: LinearSolver = None) -> np.ndarray[tuple[int]]:
+        ls_solver: LinearSolver = None) -> NDArray[np.float64]:
         """Returns the solution of a non-linear system of algebraic equations
         around an initial guess using the Newton-Raphson method.
 
@@ -122,7 +122,7 @@ class LevenbergMarquardtSolver(NewtonSolver):
 
     def solve(self, problem: NonlinearProblem,
         output: bool = False, ls_solver: LinearSolver = None
-        ) -> np.ndarray[tuple[int]]:
+        ) -> NDArray[np.float64]:
         """Returns the solution of a non-linear system of algebraic equations
         around an initial guess using the Levenberg-Marquardt method.
 

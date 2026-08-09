@@ -86,7 +86,7 @@ class GaussSolver(DirectSolver):
         return matrix_operations.back_substitution(A_aug[:,:-1], b_up)
 
     def forward_elimination(self, A: np.ndarray[tuple[int, int], np.dtype[np.float64]],
-        b: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+        b: NDArray[np.float64]) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
         """Returns the augmented matrix that result from
         forward elimination of a square matrix A.
 

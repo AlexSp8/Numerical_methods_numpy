@@ -13,26 +13,26 @@ if str(parent_dir) not in sys.path:
 from ode import plot
 from ode import ivp
 
-def f1(t: float, u: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
+def f1(t: float, u: NDArray[np.float64]) -> NDArray[np.float64]:
     dudt = np.array([-2*(t**3) + 12*(t**2) - 20*t + 8.5])
     return dudt # Explicit Euler, RK2, RK3, RK4 test
 
-def f2(t: float, u: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
+def f2(t: float, u: NDArray[np.float64]) -> NDArray[np.float64]:
     u1 = u[0]
     dudt = np.array([4*np.exp(0.8*t) -0.5*u1])
     return dudt # Heun's, Midpoint RK4 test
 
-def f_sys(t: float, u: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
+def f_sys(t: float, u: NDArray[np.float64]) -> NDArray[np.float64]:
     u1, u2 = u[0], u[1]
     dudt = np.array([-0.5*u1, 4.0-0.3*u2-0.1*u1])
     return dudt # Explicit Euler, RK4 System
 
-def f_adapt(t: float, u: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
+def f_adapt(t: float, u: NDArray[np.float64]) -> NDArray[np.float64]:
     u1 = u[0]
     dudt = np.array([10*np.exp(-((t-2)**2)/(2*(0.075**2)))-0.6*u1])
     return dudt # Adaptive test
 
-def f_im(t: float, u: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
+def f_im(t: float, u: NDArray[np.float64]) -> NDArray[np.float64]:
     u1 = u[0]
     dudt = np.array([-1000.0*u1 + 3000.0 - 2000.0*np.exp(-t)])
     return dudt # Implicit test

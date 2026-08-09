@@ -3,8 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import griddata
 
-def plot_contour(mesh, u: np.ndarray[tuple[int]],
-    u_exact: np.ndarray[tuple[int]]):
+def plot_contour(mesh, u: NDArray[np.float64],
+    u_exact: NDArray[np.float64]):
     """
     Plots the numerical solution, analytical solution, and absolute error 
     for a 2D structured or curvilinear mesh.
@@ -47,7 +47,7 @@ def plot_contour(mesh, u: np.ndarray[tuple[int]],
     # Uses a log scale colorbar if errors span orders of magnitude
     contour3 = axes[2].contourf(X, Y, U_err, levels=10, cmap='viridis')
     fig.colorbar(contour3, ax=axes[2], label='Absolute Error')
-    axes[2].set_title('Spatial Error Distribution ($|u_{num} - u_{exact}|$)')
+    axes[2].set_title('Error ($|u_{num} - u_{exact}|$)')
     axes[2].set_xlabel('X')
     
     # Optional: Overlay your actual node points as tiny dots to see grid density

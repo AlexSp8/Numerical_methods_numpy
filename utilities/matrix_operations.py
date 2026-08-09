@@ -1,6 +1,6 @@
 
 import numpy as np
-import numpy.typing as npt
+from numpy.typing import NDArray
 import scipy
 
 def minor_matrix_numpy(A: np.ndarray[tuple[int, int], np.dtype[np.float64]],
@@ -250,8 +250,8 @@ def back_substitution(A: np.ndarray[tuple[int, int], np.dtype[np.float64]],
 
     return x
 
-def lu_decomposition(A: np.ndarray[tuple[int, int]],
-    ) -> tuple[np.ndarray[tuple[int, int]], np.ndarray[tuple[int]]]:
+def lu_decomposition(A: NDArray[np.float64],
+    ) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
     """Returns the LU decomposition of a matrix, A and the order of rows after partial pivot.
     L is the lower and U is the upper diagonal part of the new matrix.
     The new order of rows can be used for reordering the right-hand side vector later.
@@ -284,7 +284,7 @@ def lu_decomposition(A: np.ndarray[tuple[int, int]],
 
     return A_lu, rows_order
 
-def tri_diagonal(A: np.ndarray[tuple[int, int]]) -> tuple[np.ndarray[tuple[int]]]:
+def tri_diagonal(A: NDArray[np.float64]) -> tuple[NDArray[np.float64]]:
     """Returns the tri-diagonal part of a matrix.
 
     Args:
@@ -311,8 +311,8 @@ def tri_diagonal(A: np.ndarray[tuple[int, int]]) -> tuple[np.ndarray[tuple[int]]
 
     return l, d, u
 
-def cholesky_decomposition(A: np.ndarray[tuple[int, int]]
-    ) -> np.ndarray[tuple[int, int]]:
+def cholesky_decomposition(A: NDArray[np.float64]
+    ) -> NDArray[np.float64]:
     """Returns the lower diagonal matrix, L, from the Cholesky
     decomposition of a symmetric, positive-definite matrix, A.
 
@@ -341,8 +341,8 @@ def cholesky_decomposition(A: np.ndarray[tuple[int, int]]
 
     return L
 
-def qr_decomposition(A: np.ndarray[tuple[int, int]]
-    ) -> tuple[np.ndarray[tuple[int, int]], np.ndarray[tuple[int, int]]]:
+def qr_decomposition(A: NDArray[np.float64]
+    ) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
     """Returns the QR decomposition of a matrix A using Gram-Schmidt process.
     Q is the orthogonal rotation matrix and R is the upper-triangular.
 

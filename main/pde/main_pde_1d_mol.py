@@ -4,23 +4,23 @@ import numpy as np
 from ode import bvp_1d_fd, plot, ivp
 from pde import mol_1d
 
-def bc_left_main(t: float, x_b: float, u_b: np.ndarray[tuple[int]],
-    dudx_b: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
+def bc_left_main(t: float, x_b: float, u_b: NDArray[np.float64],
+    dudx_b: NDArray[np.float64]) -> NDArray[np.float64]:
     neq = u_b.shape[0]
     res = np.zeros(neq)
     res[0] = u_b[0] - 40.0
     return res
 
-def bc_right_main(t: float, x_b: float, u_b: np.ndarray[tuple[int]],
-    dudx_b: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
+def bc_right_main(t: float, x_b: float, u_b: NDArray[np.float64],
+    dudx_b: NDArray[np.float64]) -> NDArray[np.float64]:
     neq = u_b.shape[0]
     res = np.zeros(neq)
     res[0] = u_b[0]- 200.0
     # res[0] = dudx_b[0]- 0.0
     return res
 
-def initial_condition_main(t0: float, x: np.ndarray[tuple[int]], neq: int
-    ) -> np.ndarray[tuple[int]]:
+def initial_condition_main(t0: float, x: NDArray[np.float64], neq: int
+    ) -> NDArray[np.float64]:
 
     nnodes = x.shape[0]
 
@@ -40,13 +40,13 @@ def initial_condition_main(t0: float, x: np.ndarray[tuple[int]], neq: int
 
     return u0
 
-def f_main(t: float, x: float, u: np.ndarray[tuple[int]], dudx: np.ndarray[tuple[int]],
-    d2udx2: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
+def f_main(t: float, x: float, u: NDArray[np.float64], dudx: NDArray[np.float64],
+    d2udx2: NDArray[np.float64]) -> NDArray[np.float64]:
     T = u[0]
     h, Ta = 0.01, 20.0
     return d2udx2 + h*(Ta-T)
 
-def u_exact_main(t: float, x: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
+def u_exact_main(t: float, x: NDArray[np.float64]) -> NDArray[np.float64]:
 
     Ta, L = 20.0, 10.0
     c = (180-20*np.cosh(0.1*L))/np.sinh(0.1*L)
@@ -100,30 +100,30 @@ def setup_main():
 
 
 # Time-dependent BCs
-def bc_left_prob1(t: float, x: float, u: np.ndarray[tuple[int]],
-    dudx: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
+def bc_left_prob1(t: float, x: float, u: NDArray[np.float64],
+    dudx: NDArray[np.float64]) -> NDArray[np.float64]:
     # Exact value at x=0 is sin(t)*(0) = 0
     return u - 0.0
 
-def bc_right_prob1(t: float, x: float, u: np.ndarray[tuple[int]],
-    dudx: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
+def bc_right_prob1(t: float, x: float, u: NDArray[np.float64],
+    dudx: NDArray[np.float64]) -> NDArray[np.float64]:
     # Exact value at x=2 is sin(t)*(4 + 2) = 6*sin(t)
     return u - 6.0*np.sin(t)
 
-def initial_condition_time(t0: float, x: np.ndarray[tuple[int]], neq: int
-    ) -> np.ndarray[tuple[int]]:
+def initial_condition_time(t0: float, x: NDArray[np.float64], neq: int
+    ) -> NDArray[np.float64]:
     nnodes = x.shape[0]
     u0 = np.zeros(nnodes*neq)
     return u0
 
-def f_prob1(t: float, x: float, u: np.ndarray[tuple[int]],
-    dudx: np.ndarray[tuple[int]], d2udx2: np.ndarray[tuple[int]]
-    ) -> np.ndarray[tuple[int]]:
+def f_prob1(t: float, x: float, u: NDArray[np.float64],
+    dudx: NDArray[np.float64], d2udx2: NDArray[np.float64]
+    ) -> NDArray[np.float64]:
     D, v = 1.0, 2.0
     S = np.cos(t)*(x**2 + x) + 4.0*x*np.sin(t)
     return D*d2udx2 - v*dudx + S
 
-def u_exact_time(t: float, x: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
+def u_exact_time(t: float, x: NDArray[np.float64]) -> NDArray[np.float64]:
     return np.sin(t)*(x**2+x)
 
 def setup_time():
@@ -163,21 +163,21 @@ def setup_time():
     return x, ivp_solver
 
 # Coupled
-def bc_left_prob2(t: float, x: float, u: np.ndarray[tuple[int]],
-    dudx: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
+def bc_left_prob2(t: float, x: float, u: NDArray[np.float64],
+    dudx: NDArray[np.float64]) -> NDArray[np.float64]:
     res0 = u[0] - 0.0                      # Dirichlet
     res1 = dudx[1] - (t + 1.0)             # Neumann
     return np.array([res0, res1])
 
-def bc_right_prob2(t: float, x: float, u: np.ndarray[tuple[int]],
-    dudx: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
+def bc_right_prob2(t: float, x: float, u: NDArray[np.float64],
+    dudx: NDArray[np.float64]) -> NDArray[np.float64]:
     res0 = dudx[0] - 2.0*(u[1] - 1.0)      # Cross-coupled Robin
     # res0 = u[0] - t
     res1 = u[1] - (t + 1.0)                # Dirichlet
     return np.array([res0, res1])
 
-def initial_condition_coupled(t0: float, x: np.ndarray[tuple[int]], neq: int
-    ) -> np.ndarray[tuple[int]]:
+def initial_condition_coupled(t0: float, x: NDArray[np.float64], neq: int
+    ) -> NDArray[np.float64]:
 
     nnodes = x.shape[0]
     u0 = np.zeros(nnodes*neq)
@@ -187,9 +187,9 @@ def initial_condition_coupled(t0: float, x: np.ndarray[tuple[int]], neq: int
 
     return u0
 
-def f_prob2(t: float, x: float, u: np.ndarray[tuple[int]],
-    dudx: np.ndarray[tuple[int]], d2udx2: np.ndarray[tuple[int]]
-    ) -> np.ndarray[tuple[int]]:
+def f_prob2(t: float, x: float, u: NDArray[np.float64],
+    dudx: NDArray[np.float64], d2udx2: NDArray[np.float64]
+    ) -> NDArray[np.float64]:
 
     S0 = x**2 - 2.0*t - t*(t + 1.0)*(x**2)
     S1 = x - 2.0*t*(t + 1.0)*(x**2)
@@ -198,7 +198,7 @@ def f_prob2(t: float, x: float, u: np.ndarray[tuple[int]],
     dudt1 = d2udx2[1] + u[1]*dudx[0] + S1
     return np.array([dudt0, dudt1])
 
-def u_exact_coupled(t: float, x: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
+def u_exact_coupled(t: float, x: NDArray[np.float64]) -> NDArray[np.float64]:
     nnodes = x.shape[0]
     neq = 2
     u_exact = np.zeros(nnodes*neq)
@@ -260,8 +260,8 @@ def bc_right_prob3(t, x, u, dudx):
     res1 = u[1] - 0.0     # Dirichlet
     return np.array([res0, res1])
 
-def initial_condition_3(t0: float, x: np.ndarray[tuple[int]], neq: int
-    ) -> np.ndarray[tuple[int]]:
+def initial_condition_3(t0: float, x: NDArray[np.float64], neq: int
+    ) -> NDArray[np.float64]:
 
     nnodes = x.shape[0]
     u0 = np.zeros(nnodes*neq)
@@ -271,7 +271,7 @@ def initial_condition_3(t0: float, x: np.ndarray[tuple[int]], neq: int
 
     return u0
 
-def u_exact_3(t: float, x: np.ndarray[tuple[int]]) -> np.ndarray[tuple[int]]:
+def u_exact_3(t: float, x: NDArray[np.float64]) -> NDArray[np.float64]:
     nnodes = x.shape[0]
     neq = 2
     u_exact = np.zeros(nnodes*neq)

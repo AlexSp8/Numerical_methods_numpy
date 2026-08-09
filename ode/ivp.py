@@ -2,6 +2,7 @@
 from typing import Callable
 from abc import ABC, abstractmethod
 import numpy as np
+from numpy.typing import NDArray
 
 from linear_systems import direct_solver
 from non_linear_systems import newton_solver, non_linear_problem
@@ -10,8 +11,8 @@ from ode import butcher_tableaus
 
 class IVPSolver(ABC):
 
-    def __init__(self, f: Callable[[float, np.ndarray[tuple[int]]], np.ndarray[tuple[int]]],
-        t0: float, tf: float, y0: np.ndarray[tuple[int]], method: str):
+    def __init__(self, f: Callable[[float, NDArray[np.float64]], NDArray[np.float64]],
+        t0: float, tf: float, y0: NDArray[np.float64], method: str):
 
         self.f = f
         self.t0 = t0
@@ -20,7 +21,7 @@ class IVPSolver(ABC):
         self.method = method
 
     @abstractmethod
-    def solve(self) -> tuple[np.ndarray[tuple[int]], np.ndarray[tuple[int, int]]]:
+    def solve(self) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
         """Returns the solution of a system of ODEs.
 
         Args:
@@ -45,7 +46,7 @@ class ExplicitIVPSolver(IVPSolver):
 
         self.h = h
 
-    def solve(self) -> tuple[np.ndarray[tuple[int]], np.ndarray[tuple[int, int]]]:
+    def solve(self) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
 
         t0, tf, h = self.t0, self.tf, self.h
         y0 = self.y0
@@ -101,7 +102,7 @@ class ExplicitAdaptiveIVPSolver(IVPSolver):
         self.atol = atol
         self.rtol = rtol
 
-    def solve(self) -> tuple[np.ndarray[tuple[int]], np.ndarray[tuple[int, int]]]:
+    def solve(self) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
 
         t0, tf = self.t0, self.tf
         y0 = self.y0
@@ -176,7 +177,7 @@ class ImplicitIVPSolver(IVPSolver):
 
         self.h = h
 
-    def solve(self) -> tuple[np.ndarray[tuple[int]], np.ndarray[tuple[int, int]]]:
+    def solve(self) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
 
         t0, tf, h = self.t0, self.tf, self.h
         y0 = self.y0
@@ -242,7 +243,7 @@ class ImplicitAdaptiveIVPSolver(IVPSolver):
         self.atol = atol
         self.rtol = rtol
 
-    def solve(self) -> tuple[np.ndarray[tuple[int]], np.ndarray[tuple[int, int]]]:
+    def solve(self) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
 
         t0, tf = self.t0, self.tf
         y0 = self.y0
@@ -341,7 +342,7 @@ class ExplicitMultistepIVPSolver(IVPSolver):
         self.b = method[order]['b']
         self.h = h
 
-    def solve(self) -> tuple[np.ndarray[tuple[int]], np.ndarray[tuple[int, int]]]:
+    def solve(self) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
 
         t0, tf, h = self.t0, self.tf, self.h
         y0 = self.y0
@@ -398,7 +399,7 @@ class ImplicitMultistepIVPSolver(IVPSolver):
         self.b = method[order]['b']
         self.h = h
 
-    def solve(self) -> tuple[np.ndarray[tuple[int]], np.ndarray[tuple[int, int]]]:
+    def solve(self) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
 
         t0, tf, h = self.t0, self.tf, self.h
         y0 = self.y0
@@ -475,7 +476,7 @@ class PredictorCorrectorIVPSolver(IVPSolver):
         self.order = order
         self.h = h
 
-    def solve(self) -> tuple[np.ndarray[tuple[int]], np.ndarray[tuple[int, int]]]:
+    def solve(self) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
 
         t0, tf, h = self.t0, self.tf, self.h
         y0 = self.y0

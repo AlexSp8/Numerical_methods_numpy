@@ -5,7 +5,7 @@ class TimeIntegration():
 
     def __init__(self, t0: float, tf: float, dt: float,
         dt_min: float, dt_max: float, atol: float, rtol: float,
-        u0: np.ndarray[tuple[int]]):
+        u0: NDArray[np.float64]):
 
         self.t = t0 + dt
 
@@ -27,7 +27,7 @@ class TimeIntegration():
 
         self.inc = 1
 
-    def update(self, dt: float, u: np.ndarray[tuple[int]]):
+    def update(self, dt: float, u: NDArray[np.float64]):
 
         self.inc += 1
 
@@ -43,7 +43,7 @@ class TimeIntegration():
 
         print(f"i = {self.inc}: t = {self.t:.4f}, dt = {self.dt:.4f}, dtp = {self.dtp:.4f}")
 
-    def update_time_step(self, u: np.ndarray[tuple[int]]) -> float:
+    def update_time_step(self, u: NDArray[np.float64]) -> float:
 
         dt = self.dt
         t = self.t

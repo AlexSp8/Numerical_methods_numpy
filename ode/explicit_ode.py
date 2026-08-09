@@ -2,12 +2,13 @@
 from typing import Callable
 
 import numpy as np
+from numpy.typing import NDArray
 
 from linear_systems import direct_solver
 
-def heun(f: Callable[[float, np.ndarray[tuple[int]]], np.ndarray[tuple[int]]],
-    t0: float, tf: float, y0: np.ndarray[tuple[int]], h: float, k_max: int = 1
-    ) -> tuple[np.ndarray[tuple[int]], np.ndarray[tuple[int, int]]]:
+def heun(f: Callable[[float, NDArray[np.float64]], NDArray[np.float64]],
+    t0: float, tf: float, y0: NDArray[np.float64], h: float, k_max: int = 1
+    ) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
     """Returns the solution of a system of ODEs using the Heun's method.
 
     Args:
@@ -53,9 +54,9 @@ def heun(f: Callable[[float, np.ndarray[tuple[int]]], np.ndarray[tuple[int]]],
         y[i+1] = y_next[:]
     return t, y
 
-def rk2(f: Callable[[float, np.ndarray[tuple[int]]], np.ndarray[tuple[int]]],
-    t0: float, tf: float, y0: np.ndarray[tuple[int]], h: float, a2: float = 0.5
-    ) -> tuple[np.ndarray[tuple[int]], np.ndarray[tuple[int, int]]]:
+def rk2(f: Callable[[float, NDArray[np.float64]], NDArray[np.float64]],
+    t0: float, tf: float, y0: NDArray[np.float64], h: float, a2: float = 0.5
+    ) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
     """Returns the solution of a system of ODEs using the RK2 method with specified a2.
 
     Args:
@@ -96,7 +97,7 @@ def rk2(f: Callable[[float, np.ndarray[tuple[int]]], np.ndarray[tuple[int]]],
 
     return t, y
 
-def rk3_coefficients(p1: float = 0.5, p2: float = 1.0) -> np.ndarray[tuple[int]]:
+def rk3_coefficients(p1: float = 0.5, p2: float = 1.0) -> NDArray[np.float64]:
     """Returns the coefficients for the RK3 method with specified p1, p2.
 
     Args:
