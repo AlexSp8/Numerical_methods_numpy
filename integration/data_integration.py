@@ -2,9 +2,9 @@
 from typing import Any
 
 import numpy as np
-import numpy.typing as npt
+from numpy.typing import NDArray
 
-def trapezoidal(x: npt.NDArray, y: npt.NDArray) -> float:
+def trapezoidal(x: NDArray[np.float64], y: NDArray[np.float64]) -> float:
     """Returns the value of the integral of a dataset, x-y,
     using the trapezoidal rule."""
 
@@ -22,7 +22,7 @@ def trapezoidal(x: npt.NDArray, y: npt.NDArray) -> float:
 
     return s
 
-def simpson_13(x: npt.NDArray, y: npt.NDArray) -> float:
+def simpson_13(x: NDArray[np.float64], y: NDArray[np.float64]) -> float:
     """Returns the value of the integral of a dataset, x-y,
     using the Simpson 1/3 rule."""
 
@@ -50,7 +50,7 @@ def simpson_13(x: npt.NDArray, y: npt.NDArray) -> float:
 
     return s
 
-def simpson_mixed(x: npt.NDArray, y: npt.NDArray) -> float:
+def simpson_mixed(x: NDArray[np.float64], y: NDArray[np.float64]) -> float:
     """Returns the value of the integral of a dataset, x-y, using
     mixed Simpson and trapezoidal rules. For even segments Simpson's 1/3 is used.
     For odd segments trapezoidal is used for the last segment only."""
@@ -76,7 +76,7 @@ def simpson_mixed(x: npt.NDArray, y: npt.NDArray) -> float:
 
     return s
 
-def simpson_mixed_2D(x: npt.NDArray, y: npt.NDArray, z: npt.NDArray) -> float:
+def simpson_mixed_2D(x: NDArray[np.float64], y: NDArray[np.float64], z: NDArray[np.float64]) -> float:
     """Returns the value of the integral of a dataset in two dimensions
     using the mixed Simpson method."""
 
@@ -87,7 +87,7 @@ def simpson_mixed_2D(x: npt.NDArray, y: npt.NDArray, z: npt.NDArray) -> float:
 
     return simpson_mixed(x, s)
 
-def simpson_mixed_multi(x: npt.NDArray, y: Any) -> float:
+def simpson_mixed_multi(x: NDArray[np.float64], y: Any) -> float:
     """Returns the value of the integral of a dataset in
     multiple dimensions using the mixed Simpson method."""
 

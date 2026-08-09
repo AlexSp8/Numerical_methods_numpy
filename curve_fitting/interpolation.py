@@ -1,13 +1,12 @@
 
 import numpy as np
-import numpy.typing as npt
+from numpy.typing import NDArray
 
 from utilities import indexing
 from linear_systems import direct_solver
 
-def vandermonde(xi: np.ndarray[tuple[int], np.dtype[np.float64]],
-    yi: np.ndarray[tuple[int], np.dtype[np.float64]]
-    ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+def vandermonde(xi: NDArray[np.float64], yi: NDArray[np.float64]
+    ) -> NDArray[np.float64]:
     """Returns the coefficients of the Vandermonde polynomial
     of order n-1, given n data points.
 
@@ -33,10 +32,9 @@ def vandermonde(xi: np.ndarray[tuple[int], np.dtype[np.float64]],
 
     return lu.solve(A, yi)
 
-def newton_gregory_polynomials(xp: np.ndarray[tuple[int], np.dtype[np.float64]],
-    xi: np.ndarray[tuple[int], np.dtype[np.float64]],
-    yi: np.ndarray[tuple[int], np.dtype[np.float64]]
-    ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
+def newton_gregory_polynomials(xp: NDArray[np.float64],
+    xi: NDArray[np.float64], yi: NDArray[np.float64]
+    ) -> NDArray[np.float64]:
     """Returns the interpolation value at a list of points for every
     Newton-Gregory polynomial of order 1 to n-1, given n data points.
 
@@ -70,10 +68,9 @@ def newton_gregory_polynomials(xp: np.ndarray[tuple[int], np.dtype[np.float64]],
 
     return y_int
 
-def lagrange_polynomial(xp: np.ndarray[tuple[int], np.dtype[np.float64]],
-    xi: np.ndarray[tuple[int], np.dtype[np.float64]],
-    yi: np.ndarray[tuple[int], np.dtype[np.float64]],
-    m: int = 1) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+def lagrange_polynomial(xp: NDArray[np.float64],
+    xi: NDArray[np.float64], yi: NDArray[np.float64],
+    m: int = 1) -> NDArray[np.float64]:
     """Returns the interpolation value at a list of points using
     Lagrange polynomials of given order m, given n data points.
 
@@ -107,7 +104,7 @@ def lagrange_polynomial(xp: np.ndarray[tuple[int], np.dtype[np.float64]],
 
     return y_int
 
-def find_spline_interval(xp: float, xi: npt.NDArray) -> int:
+def find_spline_interval(xp: float, xi: NDArray[np.float64]) -> int:
     """Returns the linear spline interval inside which xp lies."""
 
     if xp < xi[0]:
@@ -119,10 +116,9 @@ def find_spline_interval(xp: float, xi: npt.NDArray) -> int:
 
     return np.searchsorted(xi, xp) - 1
 
-def linear_splines(xp: np.ndarray[tuple[int], np.dtype[np.float64]],
-    xi: np.ndarray[tuple[int], np.dtype[np.float64]],
-    yi: np.ndarray[tuple[int], np.dtype[np.float64]],
-    ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+def linear_splines(xp: NDArray[np.float64],
+    xi: NDArray[np.float64], yi: NDArray[np.float64],
+    ) -> NDArray[np.float64]:
     """Returns the interpolation value at a list of points using
     linear splines given n data points.
 
@@ -155,10 +151,9 @@ def linear_splines(xp: np.ndarray[tuple[int], np.dtype[np.float64]],
 
     return y_int
 
-def quadratic_splines(xp: np.ndarray[tuple[int], np.dtype[np.float64]],
-    xi: np.ndarray[tuple[int], np.dtype[np.float64]],
-    yi: np.ndarray[tuple[int], np.dtype[np.float64]],
-    bc: str = 'linear', v: float = 0.0) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+def quadratic_splines(xp: NDArray[np.float64],
+    xi: NDArray[np.float64], yi: NDArray[np.float64],
+    bc: str = 'linear', v: float = 0.0) -> NDArray[np.float64]:
     """Returns the interpolation value at a list of points using
     quadratic splines given n data points A boundary condition
     for one endpoint can also be given.
@@ -209,10 +204,9 @@ def quadratic_splines(xp: np.ndarray[tuple[int], np.dtype[np.float64]],
 
     return y_int
 
-def cubic_splines(xp: np.ndarray[tuple[int], np.dtype[np.float64]],
-    xi: np.ndarray[tuple[int], np.dtype[np.float64]],
-    yi: np.ndarray[tuple[int], np.dtype[np.float64]],
-    bc: str = 'natural', v: float = 0.0) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+def cubic_splines(xp: NDArray[np.float64],
+    xi: NDArray[np.float64], yi: NDArray[np.float64],
+    bc: str = 'natural', v: float = 0.0) -> NDArray[np.float64]:
     """Returns the interpolation value at a list of points using
     cubic splines given n data points A boundary condition
     for one endpoint can also be given.

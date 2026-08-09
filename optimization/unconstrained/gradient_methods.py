@@ -1,7 +1,7 @@
 
 from typing import Callable
 import numpy as np
-import numpy.typing as npt
+from numpy.typing import NDArray
 from scipy.optimize import minimize
 
 from differentiation import partial_derivatives
@@ -10,10 +10,10 @@ from optimization.unconstrained.line_search import LineSearch
 from linear_systems import direct_solver
 from non_linear_systems import newton_solver, non_linear_problem
 
-def steepest_descent(f: Callable[[np.ndarray[tuple[int], np.dtype[np.float64]]], float],
-    x0: np.ndarray[tuple[int], np.dtype[np.float64]],
+def steepest_descent(f: Callable[[NDArray[np.float64]], float],
+    x0: NDArray[np.float64],
     df: Callable[[Callable[[float], float], float, float, float], float],
-    tol: float = 1e-8, k_max = 100) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+    tol: float = 1e-8, k_max = 100) -> NDArray[np.float64]:
     """Returns the point of minimum of a multi-variable function using the
     Steepest Descent method.
 
@@ -53,11 +53,11 @@ def steepest_descent(f: Callable[[np.ndarray[tuple[int], np.dtype[np.float64]]],
 
     return x
 
-def conjugate_gradient(f: Callable[[np.ndarray[tuple[int], np.dtype[np.float64]]], float],
-    x0: np.ndarray[tuple[int], np.dtype[np.float64]],
+def conjugate_gradient(f: Callable[[NDArray[np.float64]], float],
+    x0: NDArray[np.float64],
     df: Callable[[Callable[[float], float], float, float, float], float],
     b_update: str = 'polak_ribiere', tol: float = 1e-8,
-    k_max = 1000) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+    k_max = 1000) -> NDArray[np.float64]:
     """Returns the point of minimum of a multi-variable function using the
     Conjugate Gradient method.
 
@@ -122,10 +122,10 @@ def conjugate_gradient(f: Callable[[np.ndarray[tuple[int], np.dtype[np.float64]]
 
     return x
 
-def newton(f: Callable[[npt.NDArray[np.float64]], float],
-    x0: npt.NDArray[np.float64],
+def newton(f: Callable[[NDArray[np.float64]], float],
+    x0: NDArray[np.float64],
     df: Callable[[Callable[[float], float], float, float, float], float]
-    ) -> npt.NDArray[np.float64]:
+    ) -> NDArray[np.float64]:
     """Returns the point of minimum of a multi-variable function using the
     Newton's method.
 
@@ -154,10 +154,10 @@ def newton(f: Callable[[npt.NDArray[np.float64]], float],
 
     return x
 
-def marquardt(f: Callable[[npt.NDArray[np.float64]], float],
-    x0: npt.NDArray[np.float64],
+def marquardt(f: Callable[[NDArray[np.float64]], float],
+    x0: NDArray[np.float64],
     df: Callable[[Callable[[float], float], float, float, float], float]
-    ) -> npt.NDArray[np.float64]:
+    ) -> NDArray[np.float64]:
     """Returns the point of minimum of a multi-variable function using the
     Marquardt's method.
 
@@ -182,10 +182,10 @@ def marquardt(f: Callable[[npt.NDArray[np.float64]], float],
 
     return x
 
-def bfgs(f: Callable[[npt.NDArray[np.float64]], float],
-    x0: npt.NDArray[np.float64],
+def bfgs(f: Callable[[NDArray[np.float64]], float],
+    x0: NDArray[np.float64],
     df: Callable[[Callable[[float], float], float, float, float], float],
-    output: bool = False, tol: float = 1e-8, k_max = 1000) -> npt.NDArray[np.float64]:
+    output: bool = False, tol: float = 1e-8, k_max = 1000) -> NDArray[np.float64]:
     """Returns the point of minimum of a multi-variable function using the
     BFGS method.
 
@@ -246,8 +246,8 @@ def bfgs(f: Callable[[npt.NDArray[np.float64]], float],
 
     return x
 
-def update_hessian_inverse(invH: npt.NDArray[np.float64], dx: npt.NDArray[np.float64],
-    dy: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+def update_hessian_inverse(invH: NDArray[np.float64], dx: NDArray[np.float64],
+    dy: NDArray[np.float64]) -> NDArray[np.float64]:
     """Applies the BFGS update formula to the inverse Hessian matrix.
 
     Args:
@@ -275,11 +275,11 @@ def update_hessian_inverse(invH: npt.NDArray[np.float64], dx: npt.NDArray[np.flo
 
     return H_new
 
-def l_bfgs(f: Callable[[npt.NDArray[np.float64]], float],
-    x0: npt.NDArray[np.float64],
+def l_bfgs(f: Callable[[NDArray[np.float64]], float],
+    x0: NDArray[np.float64],
     df: Callable[[Callable[[float], float], float, float, float], float],
     output: bool = False, m_max: int = 10, tol: float = 1e-6,
-    k_max: int = 1000) -> npt.NDArray[np.float64]:
+    k_max: int = 1000) -> NDArray[np.float64]:
     """Returns the point of minimum of a multi-variable function using the
     L-BFGS method.
 
@@ -375,9 +375,9 @@ def l_bfgs(f: Callable[[npt.NDArray[np.float64]], float],
 
     return x
 
-def strong_wolfe_line_search(f: Callable[[npt.NDArray[np.float64]], float],
+def strong_wolfe_line_search(f: Callable[[NDArray[np.float64]], float],
     df: Callable[[Callable[[float], float], float, float, float], float],
-    x: npt.NDArray[np.float64], p: npt.NDArray[np.float64],
+    x: NDArray[np.float64], p: NDArray[np.float64],
     c1: float = 1e-4, c2: float = 0.9,
     h_max: float = 10.0, k_max: int = 10) -> float:
     """Returns the optimal step to minimize a function along a direction
@@ -441,9 +441,9 @@ def strong_wolfe_line_search(f: Callable[[npt.NDArray[np.float64]], float],
 
     return h
 
-def zoom(f: Callable[[npt.NDArray[np.float64]], float],
+def zoom(f: Callable[[NDArray[np.float64]], float],
     df: Callable[[Callable[[float], float], float, float, float], float],
-    x: npt.NDArray[np.float64], p: npt.NDArray[np.float64],
+    x: NDArray[np.float64], p: NDArray[np.float64],
     hl: float, hu: float, f0: float, grad_f0_p: float,
     c1: float = 1e-4, c2: float = 0.9, k_max: int = 20) -> float:
     """Returns the optimal step value to minimize a function along a direction

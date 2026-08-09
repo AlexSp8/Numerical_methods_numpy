@@ -1,7 +1,7 @@
 
 from typing import Callable
 import numpy as np
-import numpy.typing as npt
+from numpy.typing import NDArray
 
 from integration import gauss_legendre_data
 from non_linear_systems import newton_solver, non_linear_problem
@@ -131,8 +131,9 @@ def gauss_legendre_1D(f: Callable[[float], float],
 
     return c1*s
 
-def gauss_legendre_2D(f: Callable[[npt.NDArray], float],
-    a: npt.NDArray, b: npt.NDArray, n: npt.NDArray = np.array([1, 1])) -> float:
+def gauss_legendre_2D(f: Callable[[NDArray[np.float64]], float],
+    a: NDArray[np.float64], b: NDArray[np.float64],
+    n: NDArray[np.float64] = np.array([1, 1])) -> float:
     """Returns the value of the integral of a 2D function, f(x,y),
     using n-point Gauss-Legendre quadrature in each direction.
     The limits a[i], b[i] and the number of points n[i] in each
@@ -162,9 +163,10 @@ def gauss_legendre_2D(f: Callable[[npt.NDArray], float],
 
     return s*jac_pr
 
-def gauss_legendre_nD_recursive(f: Callable[[npt.NDArray], float],
-    a: npt.NDArray, b: npt.NDArray, n: npt.NDArray, dim: int = 0,
-    xp: npt.NDArray = None) -> float:
+def gauss_legendre_nD_recursive(f: Callable[[NDArray[np.float64]], float],
+    a: NDArray[np.float64], b: NDArray[np.float64],
+    n: NDArray[np.float64], dim: int = 0,
+    xp: NDArray[np.float64] = None) -> float:
     """Returns the value of the integral of a nD function, f(x,y),
     using n-point Gauss-Legendre quadrature in each direction.
     The limits a[i], b[i] and the number of points n[i] in each
@@ -191,8 +193,8 @@ def gauss_legendre_nD_recursive(f: Callable[[npt.NDArray], float],
 
     return s*jac
 
-def gauss_legendre_nD(f: Callable[[npt.NDArray], float],
-    a: npt.NDArray, b: npt.NDArray, n:npt.NDArray) -> float:
+def gauss_legendre_nD(f: Callable[[NDArray[np.float64]], float],
+    a: NDArray[np.float64], b: NDArray[np.float64], n:NDArray[np.float64]) -> float:
     """Returns the value of the integral of a nD function, f(x,y),
     using n-point Gauss-Legendre quadrature in each direction.
     The limits a[i], b[i] and the number of points n[i] in each
@@ -247,7 +249,7 @@ def legendre_polynomial(x: float, n: int) -> tuple[float, float]:
 
     return p, dp
 
-def gauss_legendre_coefficients(n: int = 1) -> tuple[npt.NDArray, npt.NDArray]:
+def gauss_legendre_coefficients(n: int = 1) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
     """Solves for Gauss-Legendre points and weights of degree n."""
 
     points = np.zeros(n)
@@ -276,7 +278,7 @@ def gauss_legendre_coefficients(n: int = 1) -> tuple[npt.NDArray, npt.NDArray]:
 
     return points, weights
 
-def gauss_legendre_residuals(x: npt.NDArray) -> npt.NDArray:
+def gauss_legendre_residuals(x: NDArray[np.float64]) -> NDArray[np.float64]:
     """Returns the residuals of the Gauss-Legendre quadrature equations
     for n-point integration."""
 
@@ -292,7 +294,7 @@ def gauss_legendre_residuals(x: npt.NDArray) -> npt.NDArray:
         res[i] = s - v
     return res
 
-def solve_gauss_legendre_system(n: int = 1) -> tuple[npt.NDArray, npt.NDArray]:
+def solve_gauss_legendre_system(n: int = 1) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
     """Returns the points and weights of Gauss-Legendre quadrature
     for n-point integration."""
 

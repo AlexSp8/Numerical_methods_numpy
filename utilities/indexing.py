@@ -1,8 +1,8 @@
 
 import numpy as np
+from numpy.typing import NDArray
 
-def nearest_index(xp: float,
-    x: np.ndarray[tuple[int], np.dtype[np.float64]]) -> int:
+def nearest_index(xp: float, x: NDArray[np.float64]) -> int:
     """Returns the index of the value in sorted x closest to xp.
 
     Args:
@@ -24,8 +24,7 @@ def nearest_index(xp: float,
     else:
         return idx
 
-def starting_index(xp: float,
-    x: np.ndarray[tuple[int], np.dtype[np.float64]], m: int = 1) -> int:
+def starting_index(xp: float, x: NDArray[np.float64], m: int = 1) -> int:
     """Returns the starting index of the sub-interval of
     size m+1 of xi that is centered around xp.
 
@@ -44,9 +43,8 @@ def starting_index(xp: float,
 
     return max(0, min(i_start, n - (m + 1)))
 
-def bubble_sort(x: np.ndarray[tuple[int], np.dtype[np.float64]],
-    y: np.ndarray[tuple[int], np.dtype[np.float64]]
-    ) -> tuple[np.ndarray[tuple[int], np.dtype[np.float64]], np.ndarray[tuple[int], np.dtype[np.float64]]]:
+def bubble_sort(x: NDArray[np.float64], y: NDArray[np.float64]
+    ) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
     """Returns the sorted versions of arrays x, y by performing
     bubble sort with respect to the array x.
 

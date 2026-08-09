@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
+from numpy.typing import NDArray
 
 current_dir = Path(__file__).resolve().parent
 parent_dir = current_dir.parent
@@ -13,8 +14,8 @@ if str(parent_dir) not in sys.path:
 from non_linear_systems import newton_solver, non_linear_problem
 from linear_systems import direct_solver
 
-def F(x: np.ndarray[tuple[int], np.dtype[np.float64]]
-    ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+def F(x: NDArray[np.float64]
+    ) -> NDArray[np.float64]:
     """Test system of non-linear algebraic equations in residual form."""
 
     return np.array([

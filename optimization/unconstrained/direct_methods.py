@@ -1,14 +1,14 @@
 
 from typing import Callable
 import numpy as np
+from numpy.typing import NDArray
 
 from optimization.one_dimensional import hybrid
 from optimization.unconstrained.line_search import LineSearch
 
-def powell(f: Callable[[np.ndarray[tuple[int], np.dtype[np.float64]]], float],
-    x0: np.ndarray[tuple[int], np.dtype[np.float64]],
-    d: np.ndarray[tuple[int], np.dtype[np.float64]] = None,
-    tol: float = 1e-8, k_max = 100) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+def powell(f: Callable[[NDArray[np.float64]], float],
+    x0: NDArray[np.float64], d: NDArray[np.float64] = None,
+    tol: float = 1e-8, k_max = 100) -> NDArray[np.float64]:
     """Returns the point of minimum of a multi-variable function using Powell's method.
 
     Args:

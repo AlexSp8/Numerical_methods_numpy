@@ -1,22 +1,32 @@
 
+import sys
+from pathlib import Path
+
 from typing import Callable
 import numpy as np
+from numpy.typing import NDArray
+
+current_dir = Path(__file__).resolve().parent
+parent_dir = current_dir.parent
+
+if str(parent_dir) not in sys.path:
+    sys.path.insert(0, str(parent_dir))
 
 from optimization.unconstrained import direct_methods, gradient_methods
 from differentiation import forward_fd as ffd
 
-def g(x: np.ndarray[tuple[int], np.dtype[np.float64]]) -> float:
+def g(x: NDArray[np.float64]) -> float:
     x, y = x[0], x[1]
     return (x**2 + y - 11)**2 + (x + y**2 - 7)**2
 
-def g_max(x: np.ndarray[tuple[int], np.dtype[np.float64]]) -> float:
+def g_max(x: NDArray[np.float64]) -> float:
     x, y = x[0], x[1]
     return -(2*x*y + 2*x - x**2 - 2*(y**2))
 
-def g_p(x: np.ndarray[tuple[int], np.dtype[np.float64]],
-    g: Callable[[np.ndarray[tuple[int], np.dtype[np.float64]]], float],
-    xp: np.ndarray[tuple[int], np.dtype[np.float64]],
-    d: np.ndarray[tuple[int], np.dtype[np.float64]],
+def g_p(x: NDArray[np.float64],
+    g: Callable[[NDArray[np.float64]], float],
+    xp: NDArray[np.float64],
+    d: NDArray[np.float64],
     p: float = 1e1) -> float:
     """Test function with Gauss Radial penalty constraints"""
 

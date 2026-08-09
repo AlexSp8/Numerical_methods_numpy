@@ -1,10 +1,9 @@
 
-from typing import List
-
 import numpy as np
-import numpy.typing as npt
+from numpy.typing import NDArray
 
-def divided_difference(x: npt.NDArray, y: npt.NDArray) -> List[float]:
+def divided_difference(x: NDArray[np.float64], y: NDArray[np.float64]
+    ) -> NDArray[np.float64]:
     """Returns the values of the derivatives of a dataset, x-y,
     using the divided differences."""
 

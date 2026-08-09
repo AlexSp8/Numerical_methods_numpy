@@ -62,7 +62,11 @@ This library provides implementations of fundamental numerical algorithms:
 - **Adaptive step methods**: RK45 Fehlberg, RK45 Cash-Karp, RK45 Dormand-Prince
 - **Adams-Bashforth**: Explicit multistep
 - **Implicit**: Euler, Midpoint, Crank-Nicolson, Gauss-Legendre (2- and 3-stage), Radau-IIA (2- and 3-stage), Lobatto IIIC-2, Lobatto IIIA-3, Adams-Moulton
-- **BVP 1D**: $2^{nd}$ order non-linear BVP 1D
+- **BVP 1D (FD, FE)**: $2^{nd}$ order non-linear BVP 1D
+
+### PDEs (`pde`)
+- **BVP transient 1D (FD, FE)**
+- **2D, 3D BVP (FD, FE)**
 
 
 ### Utilities (`utilities`)
@@ -102,7 +106,6 @@ from linear_systems.direct_solvers import gauss_elimination
 ### Root Finding Example
 ```python
 from roots.bracketing import bisection
-import math
 
 # Find root of f(x) = x^2 - 2 in [1, 2]
 def f(x):
@@ -110,33 +113,6 @@ def f(x):
 
 root = bisection(f, 1.0, 2.0)
 print(f"Root: {root}")  # Should be approximately 1.4142
-```
-
-### Linear System Example
-```python
-from linear_systems.direct_solvers import gauss_elimination
-
-# Solve Ax = b where A is 3x3 matrix, b is vector
-A = [[2, 1, -1], [1, 3, 2], [-1, 2, 4]]
-b = [8, 13, 10]
-
-x = gauss_elimination(A, b)
-print(f"Solution: {x}")
-```
-
-### Non-Linear System Example
-```python
-from non_linear_systems.non_linear_system_iterative_solvers import newton_raphson
-import math
-
-# Solve system: x^2 + y^2 = 1, x + y = 1
-def F(xy):
-    x, y = xy
-    return [x**2 + y**2 - 1, x + y - 1]
-
-x0 = [0.5, 0.5]  # Initial guess
-solution = newton_raphson(F, x0)
-print(f"Solution: {solution}")
 ```
 
 ## Project Structure
@@ -186,12 +162,15 @@ numerical_methods/
 │       ├── butcher_tableaus.py
 │       ├── explicit_ode.py
 │       ├── ivp.py
-│       ├── bvp_1d_fd.py
 │       ├── plot.py
 │       └── time_integration.py
 ├── pde/
-│       ├── bvp_fd.py
-│       └── mol_1d.py
+│       ├── boundary_conditions.py
+│       ├── bvp_setup.py
+│       ├── fe_stabilization.py
+│       ├── mesh_discretization.py
+│       ├── mol_1d.py
+│       └── plot_pde.py
 
 └── utilities/
     ├── indexing.py             # Index finding, sort
@@ -202,4 +181,5 @@ numerical_methods/
 
 ## Future Development
 
+- [ ] FE Boundary integration (line, surface)
 - [ ] Add more advanced algorithms

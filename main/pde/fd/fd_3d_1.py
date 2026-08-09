@@ -14,6 +14,7 @@ if str(parent_dir) not in sys.path:
 from linear_systems import direct_solver
 from pde import bvp_setup, mesh_discretization, plot_pde, boundary_conditions
 
+# Linear time-dependent
 def bc_x0(t: float, x: NDArray[np.float64], u: NDArray[np.float64],
     grad_u: NDArray[np.float64]) -> NDArray[np.float64]:
     neq = u.shape[0]

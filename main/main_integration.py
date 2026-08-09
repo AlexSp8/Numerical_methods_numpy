@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
-import numpy.typing as npt
+from numpy.typing import NDArray
 
 current_dir = Path(__file__).resolve().parent
 parent_dir = current_dir.parent
@@ -12,7 +12,6 @@ if str(parent_dir) not in sys.path:
     sys.path.insert(0, str(parent_dir))
 
 from integration import data_integration, function_integration
-from utilities import io_utils
 
 # Path to the Datasets directory
 DATASETS_DIR = parent_dir/'integration/data'
@@ -21,7 +20,7 @@ def f(x: float) -> float:
     return 0.2 + 25*x - 200*(x**2) + 675*(x**3) - 900*(x**4) + 400*(x**5)
     # return math.sin(x)
 
-def f_2D(xi: npt.NDArray) -> float:
+def f_2D(xi: NDArray[np.float64]) -> float:
     x, y = xi[0], xi[1]
     return 2*x*y + 2*x - x**2 -2*(y**2) + 72
 

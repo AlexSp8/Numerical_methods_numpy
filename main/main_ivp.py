@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
+from numpy.typing import NDArray
 
 current_dir = Path(__file__).resolve().parent
 parent_dir = current_dir.parent
@@ -10,8 +11,7 @@ parent_dir = current_dir.parent
 if str(parent_dir) not in sys.path:
     sys.path.insert(0, str(parent_dir))
 
-from ode import plot
-from ode import ivp
+from ode import plot, ivp
 
 def f1(t: float, u: NDArray[np.float64]) -> NDArray[np.float64]:
     dudt = np.array([-2*(t**3) + 12*(t**2) - 20*t + 8.5])

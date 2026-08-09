@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
-import numpy.typing as npt
+from numpy.typing import NDArray
 
 current_dir = Path(__file__).resolve().parent
 parent_dir = current_dir.parent
@@ -21,7 +21,7 @@ DATASETS_DIR = parent_dir/'integration/data'
 def f(x: float) -> float:
     return 1.2 - 0.25*x - 0.5*(x**2) - 0.15*(x**3) - 0.1*(x**4)
 
-def f_2D(xi: npt.NDArray) -> float:
+def f_2D(xi: NDArray[np.float64]) -> float:
     # x, y = xi[0], xi[1]
     # return 2*x*y + 2*x - x**2 -2*(y**2) + 72
     return np.sum(xi**2)

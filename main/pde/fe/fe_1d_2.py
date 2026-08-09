@@ -15,15 +15,15 @@ from linear_systems import direct_solver
 from ode import plot
 from pde import bvp_setup, mesh_discretization, boundary_conditions
 
-# Non-Linear
-def bc_x0(t: float, x: float, u: NDArray[np.float64],
+# Non-Linear Equation and BC
+def bc_x0(t: float, x: NDArray[np.float64], u: NDArray[np.float64],
     grad_u: NDArray[np.float64]) -> NDArray[np.float64]:
     neq = u.shape[0]
     res = np.zeros(neq)
     res[0] = u[0] - 1.0
     return res
 
-def bc_xf(t: float, x: float, u: NDArray[np.float64],
+def bc_xf(t: float, x: NDArray[np.float64], u: NDArray[np.float64],
     grad_u: NDArray[np.float64]) -> NDArray[np.float64]:
     neq = u.shape[0]
     res = np.zeros(neq)

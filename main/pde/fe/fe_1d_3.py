@@ -15,7 +15,7 @@ from linear_systems import direct_solver
 from ode import plot
 from pde import bvp_setup, mesh_discretization, boundary_conditions
 
-# Linear system
+# Linear system, Flux BC with both derivatives
 def bc_x0(t: float, x: NDArray[np.float64], u: NDArray[np.float64],
     grad_u: NDArray[np.float64]) -> NDArray[np.float64]:
     neq = u.shape[0]

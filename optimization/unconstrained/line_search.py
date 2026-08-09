@@ -13,7 +13,7 @@ class LineSearch:
         x: The current position in the n-dimensional space.
         d: The direction vector along which to search."""
 
-    def __init__(self, f: Callable[[np.ndarray[tuple[int], np.dtype[np.float64]]], float]):
+    def __init__(self, f: Callable[[NDArray[np.float64]], float]):
         """Initializes the LineSearch wrapper with an function.
 
         Args:
@@ -23,8 +23,8 @@ class LineSearch:
         self.x = np.array([])
         self.d = np.array([])
 
-    def update(self, x: np.ndarray[tuple[int], np.dtype[np.float64]],
-        d: np.ndarray[tuple[int], np.dtype[np.float64]]) -> None:
+    def update(self, x: NDArray[np.float64],
+        d: NDArray[np.float64]) -> None:
         """Updates the current position and direction for the next line search.
 
         Args:

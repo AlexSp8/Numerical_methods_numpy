@@ -1,6 +1,7 @@
 
 import time
 import numpy as np
+from numpy.typing import NDArray
 import scipy
 
 # from utilities import matrix_operations
@@ -109,7 +110,7 @@ class NewtonSolver:
 
         if cor_norm0 < np.sqrt(self.tol):
             self.is_full = False
-    
+
         return u
 
 class LevenbergMarquardtSolver(NewtonSolver):

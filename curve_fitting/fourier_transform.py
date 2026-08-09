@@ -2,9 +2,9 @@
 from typing import Tuple
 
 import numpy as np
-import numpy.typing as npt
+from numpy.typing import NDArray
 
-def discrete_fourier_transform(f: npt.NDArray) -> Tuple[npt.NDArray]:
+def discrete_fourier_transform(f: NDArray[np.float64]) -> Tuple[NDArray[np.float64]]:
     """Returns the coefficients of discrete Fourier Transform
     of a set of N discrete data, f."""
 
@@ -26,7 +26,7 @@ def discrete_fourier_transform(f: npt.NDArray) -> Tuple[npt.NDArray]:
 
     return re, im
 
-def fft_sande_tukey(f: npt.NDArray) -> Tuple[npt.NDArray]:
+def fft_sande_tukey(f: NDArray[np.float64]) -> Tuple[NDArray[np.float64]]:
     """Returns the coefficients of Sande-Tukey FFT
     of a set of N discrete data, f."""
 
@@ -55,7 +55,7 @@ def fft_sande_tukey(f: npt.NDArray) -> Tuple[npt.NDArray]:
 
     return bit_reversal(data)
 
-def bit_reversal(data: npt.NDArray) -> Tuple[npt.NDArray]:
+def bit_reversal(data: NDArray[np.float64]) -> Tuple[NDArray[np.float64]]:
 
     re, im = data.real, data.imag
     N = len(re)

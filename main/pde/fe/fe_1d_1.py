@@ -19,14 +19,14 @@ ALPHA = 1.0
 BETA = 0.0
 
 # Linear, Dirichlet-Neumann
-def bc_x0(t: float, x: float, u: NDArray[np.float64],
+def bc_x0(t: float, x: NDArray[np.float64], u: NDArray[np.float64],
     grad_u: NDArray[np.float64]) -> NDArray[np.float64]:
     neq = u.shape[0]
     res = np.zeros(neq)
     res[0] = u[0] - ALPHA
     return res
 
-def bc_xf(t: float, x: float, u: NDArray[np.float64],
+def bc_xf(t: float, x: NDArray[np.float64], u: NDArray[np.float64],
     grad_u: NDArray[np.float64]) -> NDArray[np.float64]:
     neq = u.shape[0]
     res = np.zeros(neq)

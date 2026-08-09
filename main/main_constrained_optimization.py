@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
-import numpy.typing as npt
+from numpy.typing import NDArray
 
 current_dir = Path(__file__).resolve().parent
 parent_dir = current_dir.parent
@@ -14,17 +14,17 @@ if str(parent_dir) not in sys.path:
 from optimization.constrained import equality_constraints
 from differentiation import forward_fd as ffd
 
-def f(xp: npt.NDArray[np.float64]) -> float:
+def f(xp: NDArray[np.float64]) -> float:
     x, y = xp[0], xp[1]
     # return x**2 + y**2
     # return x + y
     # return (x+y)**2
     return (x**2)*y
 
-def f_max(xp: npt.NDArray[np.float64]) -> float:
+def f_max(xp: NDArray[np.float64]) -> float:
     return -f(xp)
 
-def g_con(xp: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+def g_con(xp: NDArray[np.float64]) -> NDArray[np.float64]:
     x, y = xp[0], xp[1]
     # return np.array([x + y - 1])
     # return np.array([x**2 + y**2 - 1])

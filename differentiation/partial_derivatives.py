@@ -2,10 +2,11 @@
 from typing import Callable
 
 import numpy as np
-import numpy.typing as npt
+from numpy.typing import NDArray
 
 def grad_f_fd(df: Callable[[Callable[[float], float], float, float, float], float],
-    f: Callable[[npt.NDArray], float], x: npt.NDArray, h: float = 1e-8) -> npt.NDArray:
+    f: Callable[[NDArray[np.float64]], float], x: NDArray[np.float64], h: float = 1e-8
+    ) -> NDArray[np.float64]:
     """Returns the gradient of an n-D function, f(x),
     at a point, x, given the finite difference method."""
 
@@ -16,8 +17,8 @@ def grad_f_fd(df: Callable[[Callable[[float], float], float, float, float], floa
         grad_f[i] = df(fi, x[i], f_x, h)
     return grad_f
 
-def f_1d_scalar(f_nd_scalar: Callable[[npt.NDArray, float]],
-    x: npt.NDArray, i: int) -> Callable[[float], float]:
+def f_1d_scalar(f_nd_scalar: Callable[[NDArray[np.float64], float]],
+    x: NDArray[np.float64], i: int) -> Callable[[float], float]:
     """Returns a 1-D scalar function, f(xi), from an n-D scalar function f(x)."""
 
     def f_1d(xi: float) -> float:
@@ -28,7 +29,8 @@ def f_1d_scalar(f_nd_scalar: Callable[[npt.NDArray, float]],
     return f_1d
 
 def hessian_f_fd(df: Callable[[Callable[[float], float], float, float], float],
-    f: Callable[[npt.NDArray], float], x: npt.NDArray, h: float = 1e-4) -> npt.NDArray:
+    f: Callable[[NDArray[np.float64]], float], x: NDArray[np.float64], h: float = 1e-4
+    ) -> NDArray[np.float64]:
     """Returns the hessian of an n-D function, f(x),
     at a point, x, given the finite difference method."""
 
@@ -45,9 +47,9 @@ def hessian_f_fd(df: Callable[[Callable[[float], float], float, float], float],
 
     return hessian
 
-def f_nd_scalar(f_vec: Callable[[npt.NDArray], npt.NDArray],
-    i: int) -> Callable[[npt.NDArray], float]:
+def f_nd_scalar(f_vec: Callable[[NDArray[np.float64]], NDArray[np.float64]],
+    i: int) -> Callable[[NDArray[np.float64]], float]:
     """Returns an n-D scalar function, f(x)[i], from an n-D vector function, f_vec(x)."""
-    def f_scalar(x: npt.NDArray) -> float:
+    def f_scalar(x: NDArray[np.float64]) -> float:
         return f_vec(x)[i]
     return f_scalar

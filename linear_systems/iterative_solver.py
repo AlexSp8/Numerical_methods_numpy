@@ -1,21 +1,21 @@
 
 import numpy as np
+from numpy.typing import NDArray
 
 from linear_systems.linear_solver import LinearSolver
 
 class IterativeSolver(LinearSolver):
 
     def __init__(self, *args, k_max: int = 1000, tol: float = 1e-8,
-        x0: np.ndarray[tuple[int], np.dtype[np.float64]] = None, **kwargs):
+        x0: NDArray[np.float64] = None, **kwargs):
 
         super().__init__(*args, **kwargs)
         self.k_max = k_max
         self.tol = tol
         self.x0 = x0
 
-    def set_initial_guess(self, A: np.ndarray[tuple[int, int], np.dtype[np.float64]],
-        b: np.ndarray[tuple[int], np.dtype[np.float64]]
-        ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+    def set_initial_guess(self, A: NDArray[np.float64], b: NDArray[np.float64]
+        ) -> NDArray[np.float64]:
         """Sets the initial guess for the solution vector.
 
         Args:
@@ -35,8 +35,8 @@ class IterativeSolver(LinearSolver):
         else:
             return b/diagA
 
-    def get_norms(self, dx: np.ndarray[tuple[int], np.dtype[np.float64]],
-        res: np.ndarray[tuple[int], np.dtype[np.float64]]) -> tuple[float, float]:
+    def get_norms(self, dx: NDArray[np.float64], res: NDArray[np.float64]
+        ) -> tuple[float, float]:
         """Returns the norms of the correction and residual vectors.
 
         Args:
@@ -57,9 +57,8 @@ class JacobiSolver(IterativeSolver):
 
         super().__init__(*args, **kwargs)
 
-    def solve(self, A: np.ndarray[tuple[int, int], np.dtype[np.float64]],
-        b: np.ndarray[tuple[int], np.dtype[np.float64]],
-        output: bool = False) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+    def solve(self, A: NDArray[np.float64], b: NDArray[np.float64],
+        output: bool = False) -> NDArray[np.float64]:
         """Returns the solution vector of a linear system of algebraic equations
         (Ax = b) with the Jacobi method.
 
@@ -102,9 +101,8 @@ class SORSolver(IterativeSolver):
         super().__init__(*args, **kwargs)
         self.w = w
 
-    def solve(self, A: np.ndarray[tuple[int, int], np.dtype[np.float64]],
-        b: np.ndarray[tuple[int], np.dtype[np.float64]],
-        output: bool = False) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+    def solve(self, A: NDArray[np.float64], b: NDArray[np.float64],
+        output: bool = False) -> NDArray[np.float64]:
         """Returns the solution vector of a linear system of algebraic equations
         (Ax = b) with the SOR method.
 
@@ -150,9 +148,8 @@ class SDSolver(IterativeSolver):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def solve(self, A: np.ndarray[tuple[int, int], np.dtype[np.float64]],
-        b: np.ndarray[tuple[int], np.dtype[np.float64]],
-        output: bool = False) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+    def solve(self, A: NDArray[np.float64], b: NDArray[np.float64],
+        output: bool = False) -> NDArray[np.float64]:
         """Returns the solution vector of a linear system of algebraic equations
         (Ax = b) with the Steepest Descent method.
 
@@ -199,9 +196,8 @@ class CGSolver(IterativeSolver):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def solve(self, A: np.ndarray[tuple[int, int], np.dtype[np.float64]],
-        b: np.ndarray[tuple[int], np.dtype[np.float64]],
-        output: bool = False) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+    def solve(self, A: NDArray[np.float64], b: NDArray[np.float64],
+        output: bool = False) -> NDArray[np.float64]:
         """Returns the solution vector of a linear system of algebraic equations
         (Ax = b) with the Conjugate Gradient method.
 

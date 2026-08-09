@@ -2,13 +2,13 @@
 from typing import Callable
 
 import numpy as np
+from numpy.typing import NDArray
 
 from linear_systems import direct_solver
 from non_linear_systems import newton_solver, non_linear_problem
 
-def linear_model_predictions(xi: np.ndarray[tuple[int, int], np.dtype[np.float64]],
-    a: np.ndarray[tuple[int], np.dtype[np.float64]]
-    ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+def linear_model_predictions(xi: NDArray[np.float64],
+    a: NDArray[np.float64]) -> NDArray[np.float64]:
     """Returns the predictions of a polynomial at the data points
     given the coefficients of the polynomial.
 
@@ -28,9 +28,8 @@ def linear_model_predictions(xi: np.ndarray[tuple[int, int], np.dtype[np.float64
 
     return np.matmul(X,a)
 
-def statistical_quantities(yi: np.ndarray[tuple[int], np.dtype[np.float64]],
-    y_model: np.ndarray[tuple[int], np.dtype[np.float64]], m: int
-    ) -> tuple[float, float, float]:
+def statistical_quantities(yi: NDArray[np.float64],
+    y_model: NDArray[np.float64], m: int) -> tuple[float, float, float]:
     """Returns the statistical quantities of polynomial regression
     given the data points
     and the coefficients of the polynomial regression.
@@ -57,10 +56,10 @@ def statistical_quantities(yi: np.ndarray[tuple[int], np.dtype[np.float64]],
 
     return std_error, r2_coef, ssr
 
-def transform_data(xi: np.ndarray[tuple[int], np.dtype[np.float64]],
-    f_basis: list[Callable[[np.ndarray[tuple[int], np.dtype[np.float64]]],
-                           np.ndarray[tuple[int], np.dtype[np.float64]]]]
-    ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
+def transform_data(xi: NDArray[np.float64],
+    f_basis: list[Callable[[NDArray[np.float64]],
+                           NDArray[np.float64]]]
+    ) -> NDArray[np.float64]:
     """Transforms univariate data to custom basis functions
     for multivariate regression.
 
@@ -81,9 +80,8 @@ def transform_data(xi: np.ndarray[tuple[int], np.dtype[np.float64]],
 
     return xi_mat
 
-def linear_regression(xi: np.ndarray[tuple[int], np.dtype[np.float64]],
-    yi: np.ndarray[tuple[int], np.dtype[np.float64]]
-    ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+def linear_regression(xi: NDArray[np.float64], yi: NDArray[np.float64]
+    ) -> NDArray[np.float64]:
     """Returns the coefficients of linear regression such that
     the linear function f(x) = a0+a1*x best describes the data.
 
@@ -106,9 +104,8 @@ def linear_regression(xi: np.ndarray[tuple[int], np.dtype[np.float64]],
 
     return a
 
-def polynomial_regression(xi: np.ndarray[tuple[int], np.dtype[np.float64]],
-    yi: np.ndarray[tuple[int], np.dtype[np.float64]], m: int = 1
-    ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+def polynomial_regression(xi: NDArray[np.float64],
+    yi: NDArray[np.float64], m: int = 1) -> NDArray[np.float64]:
     """Returns the coefficients of polynomial regression such that
     the linear function f(x) = a0+a1*x+...+am*x best describes the data.
 
@@ -143,9 +140,8 @@ def polynomial_regression(xi: np.ndarray[tuple[int], np.dtype[np.float64]],
 
     return a_coef
 
-def multi_linear_regression(xi: np.ndarray[tuple[int, int], np.dtype[np.float64]],
-    yi: np.ndarray[tuple[int], np.dtype[np.float64]]
-    ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+def multi_linear_regression(xi: NDArray[np.float64],
+    yi: NDArray[np.float64] ) -> NDArray[np.float64]:
     """Returns the coefficients of multi-linear regression such that
     the multi-linear function f(x1, x2, ..., xm) = a0+a1*x1+...+am*xm best describes the data.
 
@@ -176,11 +172,11 @@ def multi_linear_regression(xi: np.ndarray[tuple[int, int], np.dtype[np.float64]
     return a_coef
 
 def non_linear_regression(
-    f: Callable[[np.ndarray[tuple[int], np.dtype[np.float64]], np.ndarray[tuple[int], np.dtype[np.float64]]],
-                np.ndarray[tuple[int], np.dtype[np.float64]]],
-    xi: np.ndarray[tuple[int, int], np.dtype[np.float64]], yi: np.ndarray[tuple[int], np.dtype[np.float64]],
-    u0: np.ndarray[tuple[int], np.dtype[np.float64]], output: bool = False, tol: float = 1e-8,
-    k_max: int = 1000, r: float = 1.0) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+    f: Callable[[NDArray[np.float64], NDArray[np.float64]],
+                NDArray[np.float64]],
+    xi: NDArray[np.float64], yi: NDArray[np.float64],
+    u0: NDArray[np.float64], output: bool = False, tol: float = 1e-8,
+    k_max: int = 1000, r: float = 1.0) -> NDArray[np.float64]:
     """Returns the coefficients of non-linear regression such that
     the non linear function f(x1, x2, ..., xm) best describes the data.
 

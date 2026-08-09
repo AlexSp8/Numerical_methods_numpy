@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
+from numpy.typing import NDArray
 
 current_dir = Path(__file__).resolve().parent
 parent_dir = current_dir.parent
@@ -16,8 +17,7 @@ from curve_fitting import interpolation
 # Path to the Datasets directory
 DATASETS_DIR = parent_dir/'curve_fitting/data'
 
-def f(xi: np.ndarray[tuple[int], np.dtype[np.float64]]
-    ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+def f(xi: NDArray[np.float64]) -> NDArray[np.float64]:
     yi = np.log(xi)
     return yi
 

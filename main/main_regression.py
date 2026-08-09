@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
+from numpy.typing import NDArray
 
 current_dir = Path(__file__).resolve().parent
 parent_dir = current_dir.parent
@@ -15,17 +16,13 @@ from curve_fitting import regression, plot
 # Path to the Datasets directory
 DATASETS_DIR = parent_dir/'curve_fitting/data'
 
-def f_b0(xi: np.ndarray[tuple[int], np.dtype[np.float64]]
-    ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+def f_b0(xi: NDArray[np.float64]) -> NDArray[np.float64]:
     return xi
 
-def f_b(xi: np.ndarray[tuple[int], np.dtype[np.float64]]
-    ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+def f_b(xi: NDArray[np.float64]) -> NDArray[np.float64]:
     return xi**2
 
-def f(a: np.ndarray[tuple[int], np.dtype[np.float64]],
-    xi: np.ndarray[tuple[int, int], np.dtype[np.float64]]
-    ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+def f(a: NDArray[np.float64], xi: NDArray[np.float64]) -> NDArray[np.float64]:
     x = xi[:,0]
     return a[0]*( 1.0 - np.exp(-a[1]*x) )
 

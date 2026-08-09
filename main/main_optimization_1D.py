@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
+from numpy.typing import NDArray
 
 current_dir = Path(__file__).resolve().parent
 parent_dir = current_dir.parent
@@ -22,8 +23,8 @@ def f_max(x: float) -> float:
     return -f(x)
 
 def f_p(x: float, f: Callable[[float], float],
-    xp: np.ndarray[tuple[int], np.dtype[np.float64]],
-    d: np.ndarray[tuple[int], np.dtype[np.float64]],
+    xp: NDArray[np.float64],
+    d: NDArray[np.float64],
     p: float = 1e1) -> float:
     """Test function with Gauss Radial penalty constraints"""
 

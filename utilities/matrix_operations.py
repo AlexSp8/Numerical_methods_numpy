@@ -3,14 +3,14 @@ import numpy as np
 from numpy.typing import NDArray
 import scipy
 
-def minor_matrix_numpy(A: np.ndarray[tuple[int, int], np.dtype[np.float64]],
-    i: int, j: int) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
+def minor_matrix_numpy(A: NDArray[np.float64],
+    i: int, j: int) -> NDArray[np.float64]:
     """Returns the minors of matrix A by excluding row i_ex and columns j_ex"""
     A_mod = np.delete(A, i, axis=0)
     return np.delete(A_mod, j, axis=1)
 
-def inverse(A: np.ndarray[tuple[int, int], np.dtype[np.float64]]
-    ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
+def inverse(A: NDArray[np.float64]
+    ) -> NDArray[np.float64]:
     """Returns the inverse of a matrix A using LU decomposition.
 
     Args:
@@ -36,7 +36,7 @@ def inverse(A: np.ndarray[tuple[int, int], np.dtype[np.float64]]
 
     return Ai
 
-def euclidean_norm(A: np.ndarray[tuple[int, int], np.dtype[np.float64]]) -> float:
+def euclidean_norm(A: NDArray[np.float64]) -> float:
     """Returns the Euclidean (Frobenius) norm of a matrix A.
 
     Args:
@@ -47,7 +47,7 @@ def euclidean_norm(A: np.ndarray[tuple[int, int], np.dtype[np.float64]]) -> floa
     # return np.linalg.norm(A, ord='fro')
     return np.sqrt(np.sum(A**2))
 
-def row_sum_norm(A: np.ndarray[tuple[int, int], np.dtype[np.float64]]) -> float:
+def row_sum_norm(A: NDArray[np.float64]) -> float:
     """Returns the row-sum (infinity) norm of a matrix A.
 
     Args:
@@ -65,7 +65,7 @@ def row_sum_norm(A: np.ndarray[tuple[int, int], np.dtype[np.float64]]) -> float:
         normA = np.maximum(normA, s_row)
     return normA
 
-def column_sum_norm(A: np.ndarray[tuple[int, int], np.dtype[np.float64]]) -> float:
+def column_sum_norm(A: NDArray[np.float64]) -> float:
     """Returns the column-sum 1-norm of a matrix A.
 
     Args:
@@ -82,7 +82,7 @@ def column_sum_norm(A: np.ndarray[tuple[int, int], np.dtype[np.float64]]) -> flo
         normA = np.maximum(normA, s_col)
     return normA
 
-def condition_number(A: np.ndarray[tuple[int, int], np.dtype[np.float64]]) -> float:
+def condition_number(A: NDArray[np.float64]) -> float:
     """Returns the condition number of a matrix A.
 
     Args:
@@ -103,9 +103,9 @@ def condition_number(A: np.ndarray[tuple[int, int], np.dtype[np.float64]]) -> fl
 
     return cond
 
-def replace_column(A: np.ndarray[tuple[int, int], np.dtype[np.float64]],
-    b: np.ndarray[tuple[int], np.dtype[np.float64]], j: int
-    ) -> np.ndarray[tuple[int, int], np.dtype[np.float64]]:
+def replace_column(A: NDArray[np.float64],
+    b: NDArray[np.float64], j: int
+    ) -> NDArray[np.float64]:
     """Returns a matrix that has a column, j, replaced by a vector b.
 
     Args:
@@ -122,7 +122,7 @@ def replace_column(A: np.ndarray[tuple[int, int], np.dtype[np.float64]],
 
     return A_new
 
-def determinant_upper_diagonal(A: np.ndarray[tuple[int, int], np.dtype[np.float64]],
+def determinant_upper_diagonal(A: NDArray[np.float64],
     n_swaps: int = 0) -> float:
     """Returns the determinant of an upper diagonal matrix.
 
@@ -146,7 +146,7 @@ def determinant_upper_diagonal(A: np.ndarray[tuple[int, int], np.dtype[np.float6
 
     return detA
 
-def log_determinant_upper_diagonal(A: np.ndarray[tuple[int, int], np.dtype[np.float64]],
+def log_determinant_upper_diagonal(A: NDArray[np.float64],
     n_swaps: int = 0) -> tuple[float, float]:
     """Returns the log-determinant of an upper diagonal matrix.
 
@@ -176,7 +176,7 @@ def log_determinant_upper_diagonal(A: np.ndarray[tuple[int, int], np.dtype[np.fl
 
     return float(sign), float(log_detA)
 
-def pivot_row(A: np.ndarray[tuple[int, int], np.dtype[np.float64]],
+def pivot_row(A: NDArray[np.float64],
     k: int) -> int:
     """Returns the row of a matrix below the diagonal
     that has the largest element in column k.
@@ -205,9 +205,9 @@ def pivot_row(A: np.ndarray[tuple[int, int], np.dtype[np.float64]],
 
     return i_max
 
-def forward_substitution(A: np.ndarray[tuple[int, int], np.dtype[np.float64]],
-    b: np.ndarray[tuple[int], np.dtype[np.float64]]
-    ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+def forward_substitution(A: NDArray[np.float64],
+    b: NDArray[np.float64]
+    ) -> NDArray[np.float64]:
     """Returns the intermediate vector, d, from Ld = b after forward substitution.
     L is the lower diagonal part of matrix A and b is the right-hand side vector.
 
@@ -227,9 +227,9 @@ def forward_substitution(A: np.ndarray[tuple[int, int], np.dtype[np.float64]],
 
     return d
 
-def back_substitution(A: np.ndarray[tuple[int, int], np.dtype[np.float64]],
-    b: np.ndarray[tuple[int], np.dtype[np.float64]]
-    ) -> np.ndarray[tuple[int], np.dtype[np.float64]]:
+def back_substitution(A: NDArray[np.float64],
+    b: NDArray[np.float64]
+    ) -> NDArray[np.float64]:
     """Returns the vector x of a linear system Ax = b after back substitution.
     This is the solution vector if forward substitution has been performed in
     A to convert it into upper diagonal.
